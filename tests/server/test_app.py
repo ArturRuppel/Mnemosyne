@@ -398,7 +398,7 @@ def test_served_page_links_brand_favicon(client):
 def test_sdgl_page_carries_inline_header_logo(client):
     # The header shows the inline notebook logo, the brand title, and the
     # page-specific name as a subtitle.
-    html = client.get("/").get_data(as_text=True)
+    html = client.get("/sdgl.html").get_data(as_text=True)
     assert 'viewBox="0 0 64 64"' in html
     assert "<h1>Electronic Lab Notebook</h1>" in html
     assert ">Data Explorer</p>" in html
@@ -504,8 +504,8 @@ def test_documents_notebook_edits_only_markdown_cells(app_root):
 
 # --- HTML serving + overlay -------------------------------------------------
 
-def test_index_serves_sdgl_with_overlay(client):
-    resp = client.get("/")
+def test_sdgl_page_served_with_overlay(client):
+    resp = client.get("/sdgl.html")
     assert resp.status_code == 200
     html = resp.get_data(as_text=True)
     assert "edit-overlay.js" in html          # overlay injected
@@ -513,6 +513,19 @@ def test_index_serves_sdgl_with_overlay(client):
 
     assert client.get("/auth.js").get_data(as_text=True).startswith("// auth disabled")
     assert client.get("/edit-overlay.js").status_code == 200
+
+
+def test_index_serves_shell_without_overlay(client):
+    resp = client.get("/")
+    assert resp.status_code == 200
+    html = resp.get_data(as_text=True)
+    assert 'id="tab-strip"' in html
+    assert 'id="iframe-stack"' in html
+    assert "edit-overlay.js" not in html      # shell chrome has no per-page overlay
+
+
+def test_tabnav_js_served(client):
+    assert client.get("/tabnav.js").status_code == 200
 
 
 def test_generated_page_served_after_regenerate(client):

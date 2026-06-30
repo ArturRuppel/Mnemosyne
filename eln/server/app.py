@@ -180,7 +180,12 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
         # a PWA (head), and inject the edit overlay (body).
         html = _AUTH_SCRIPT_RE.sub("", html)
         html = html.replace("</head>", PWA_HEAD_SNIPPET + "</head>", 1)
-        html = html.replace("</body>", OVERLAY_SNIPPET + "</body>")
+        # The tab shell is chrome, not a content page — it has no Export/Add
+        # forms of its own, and the overlay toolbar is fixed-position, so
+        # injecting it here would float a second copy on top of whichever
+        # iframe's own (correct) copy is already showing.
+        if filename != "shell.html":
+            html = html.replace("</body>", OVERLAY_SNIPPET + "</body>")
         # no-store so the installed PWA always re-fetches the page rather than
         # reusing a stale copy — generated pages carry inline scripts that change
         # on regenerate, and a PWA window won't hard-reload on its own.
@@ -192,7 +197,7 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
 
     @app.route("/")
     def serve_index():
-        return serve_html_with_overlay("sdgl.html")
+        return serve_html_with_overlay("shell.html")
 
     @app.route("/<page>.html")
     def serve_page(page):
@@ -209,6 +214,10 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
     @app.route("/forms.js")
     def serve_forms_js():
         return send_from_directory(str(assets), "forms.js")
+
+    @app.route("/tabnav.js")
+    def serve_tabnav_js():
+        return send_from_directory(str(assets), "tabnav.js")
 
     @app.route("/auth.js")
     def serve_auth_js_noop():
