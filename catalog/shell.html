@@ -223,8 +223,25 @@
             }
         });
 
-        loadState();
-        render();
+        // Defense-in-depth: a shell must never instantiate inside another
+        // shell's iframe (e.g. a stale generated page whose nav still links
+        // to "/"). If that happens, recover the host tab to DEFAULT_URL —
+        // not back to this same broken URL, which renderIframes() would
+        // treat as a same-URL no-op and leave the tab stranded.
+        var nestedInShell = false;
+        try {
+            nestedInShell = window.parent !== window.self && window.parent.__ELN_SHELL__ === true;
+        } catch (e) { /* cross-origin parent; not a shell we recognize */ }
+
+        if (nestedInShell) {
+            window.parent.postMessage(
+                {type: 'tabnav:navigate', url: DEFAULT_URL, newTab: false},
+                window.location.origin
+            );
+        } else {
+            loadState();
+            render();
+        }
     </script>
 </body>
 </html>
