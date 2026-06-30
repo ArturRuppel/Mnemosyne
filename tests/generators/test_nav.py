@@ -5,7 +5,7 @@ from eln.plugins import NavLink, Plugin
 
 EXPECTED = (
     '<div class="nav">\n'
-    '        <a href="/">Data Explorer</a>\n'
+    '        <a href="sdgl.html">Data Explorer</a>\n'
     '        <a href="experiments.html">Experiment Catalog</a>\n'
     '        <a href="reports.html">Reports</a>\n'
     '        <a href="protocols.html">Protocols</a>\n'
@@ -26,8 +26,8 @@ def test_render_nav_matches_expected_block():
 def test_render_nav_appends_plugin_links():
     extra = Plugin(name="widgets", nav=NavLink("Widgets", "widgets.html"))
     out = render_nav([extra])
-    assert '<a href="/">Data Explorer</a>' in out       # core preserved
-    assert '<a href="widgets.html">Widgets</a>' in out   # plugin appended
+    assert '<a href="sdgl.html">Data Explorer</a>' in out  # core preserved
+    assert '<a href="widgets.html">Widgets</a>' in out     # plugin appended
 
 
 def test_sdgl_static_nav_matches_render_nav():

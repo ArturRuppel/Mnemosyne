@@ -10,7 +10,7 @@ from eln.plugins import NavLink, discover_plugins
 
 # Core pages are part of the notebook itself, not plugins.
 CORE_NAV = [
-    NavLink("Data Explorer", "/"),
+    NavLink("Data Explorer", "sdgl.html"),
     NavLink("Experiment Catalog", "experiments.html"),
     NavLink("Reports", "reports.html"),
     NavLink("Protocols", "protocols.html"),
