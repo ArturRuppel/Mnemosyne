@@ -13,28 +13,35 @@
             background: #eef1f4;
         }
         .tab-strip {
-            display: flex; align-items: stretch; background: #263646;
-            overflow-x: auto; flex: 0 0 auto;
+            display: flex; align-items: flex-end; gap: 0.25rem; background: #263646;
+            overflow-x: auto; flex: 0 0 auto; padding: 0.5rem 0.5rem 0;
         }
         .tab {
             display: flex; align-items: center; gap: 0.5rem;
-            padding: 0.55rem 0.6rem 0.55rem 0.9rem;
-            color: #d7e0e7; cursor: pointer; white-space: nowrap;
-            border-right: 1px solid #1b2733; max-width: 16rem; flex: 0 0 auto;
+            padding: 0.55rem 0.5rem 0.55rem 0.9rem;
+            color: #d7e0e7; opacity: 0.7; cursor: pointer; white-space: nowrap;
+            max-width: 16rem; flex: 0 0 auto; border-radius: 8px 8px 0 0;
+            transition: background 0.12s ease, opacity 0.12s ease;
         }
-        .tab.active { background: #eef1f4; color: #27313a; }
+        .tab:hover { background: #324a60; opacity: 1; }
+        .tab.active {
+            background: #eef1f4; color: #27313a; opacity: 1; font-weight: 650;
+            box-shadow: inset 0 2px 0 #2d6f9f;
+        }
         .tab-title { overflow: hidden; text-overflow: ellipsis; }
         .tab-close {
-            border: none; background: transparent; color: inherit; font-size: 1rem;
-            line-height: 1; cursor: pointer; padding: 0.1rem 0.3rem; border-radius: 4px;
+            border: none; background: transparent; color: inherit; font-size: 0.95rem;
+            line-height: 1; cursor: pointer; padding: 0.15rem 0.4rem; border-radius: 999px;
         }
-        .tab-close:hover { background: rgba(0, 0, 0, 0.15); }
+        .tab-close:hover { background: rgba(255, 255, 255, 0.18); }
+        .tab.active .tab-close:hover { background: #e3eef6; }
         .tab-new {
-            flex: 0 0 auto; border: none; background: transparent; color: #d7e0e7;
-            font-size: 1.1rem; padding: 0.55rem 0.9rem; cursor: pointer;
+            flex: 0 0 auto; align-self: center; border: none; background: transparent;
+            color: #d7e0e7; opacity: 0.7; font-size: 1.1rem; padding: 0.5rem 0.75rem;
+            cursor: pointer; border-radius: 6px; transition: background 0.12s ease, opacity 0.12s ease;
         }
-        .tab-new:hover { background: rgba(255, 255, 255, 0.08); }
-        .iframe-stack { flex: 1 1 auto; position: relative; }
+        .tab-new:hover { background: #324a60; opacity: 1; }
+        .iframe-stack { flex: 1 1 auto; position: relative; background: #eef1f4; }
         .iframe-stack iframe {
             position: absolute; inset: 0; width: 100%; height: 100%; border: none;
         }
