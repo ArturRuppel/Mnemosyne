@@ -181,7 +181,12 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
         html = _AUTH_SCRIPT_RE.sub("", html)
         html = html.replace("</head>", PWA_HEAD_SNIPPET + "</head>", 1)
         html = html.replace("</body>", OVERLAY_SNIPPET + "</body>")
-        return Response(html, mimetype="text/html")
+        # no-store so the installed PWA always re-fetches the page rather than
+        # reusing a stale copy — generated pages carry inline scripts that change
+        # on regenerate, and a PWA window won't hard-reload on its own.
+        resp = Response(html, mimetype="text/html")
+        resp.headers["Cache-Control"] = "no-store, must-revalidate"
+        return resp
 
     # ==================== HTML SERVING WITH OVERLAY ====================
 

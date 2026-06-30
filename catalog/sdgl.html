@@ -413,7 +413,10 @@
                 // not the numeric DB id embedded in node_id.
                 row.addEventListener('click', () => {
                     const frag = link.slug || (link.node_id || '').split(':', 2)[1];
-                    window.open(`reports.html#${frag}`, '_blank');
+                    // Navigate the current window (not window.open '_blank'): in an
+                    // installed standalone PWA there is no tab strip, so '_blank'
+                    // hands the URL to the default browser instead of staying in-app.
+                    window.location.href = `reports.html#${frag}`;
                 }, true);
                 return wrapLeaf(row);
             }

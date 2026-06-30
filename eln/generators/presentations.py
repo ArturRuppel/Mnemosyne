@@ -11,6 +11,32 @@ from pathlib import Path
 
 from eln.generators.nav import render_nav
 
+# Presentation decks open in a separate window. window.open with explicit
+# width/height/left/top requests a popup *window* (not a tab); the click handler
+# preventDefault stops the anchor from also navigating in place. The raw <a href>
+# stays as a no-JS fallback. Defined as a plain string (not inside the page
+# f-string) so the JS braces need no escaping.
+PRESENTATION_WINDOW_SCRIPT = '''
+    <script>
+    (function () {
+        function openDeck(url) {
+            var w = Math.min(1600, Math.round(screen.availWidth * 0.9));
+            var h = Math.min(1000, Math.round(screen.availHeight * 0.9));
+            var left = Math.round((screen.availWidth - w) / 2) + (screen.availLeft || 0);
+            var top = Math.round((screen.availHeight - h) / 2) + (screen.availTop || 0);
+            var features = 'popup=yes,noopener,width=' + w + ',height=' + h +
+                           ',left=' + left + ',top=' + top;
+            window.open(url, '_blank', features);
+        }
+        document.querySelectorAll('.presentation-link').forEach(function (a) {
+            a.addEventListener('click', function (e) {
+                e.preventDefault();
+                openDeck(a.href);
+            });
+        });
+    })();
+    </script>'''
+
 
 def parse_presentation_dir(dirname):
     """Extract date and title from directory name like '2026-01-21_QBio_seminar_Pasteur'."""
@@ -131,6 +157,7 @@ def generate_presentations(root, catalog_out=None):
     <div class="footer">
         Electronic Lab Notebook
     </div>
+{PRESENTATION_WINDOW_SCRIPT}
 </body>
 </html>"""
 

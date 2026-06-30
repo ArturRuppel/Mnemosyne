@@ -81,7 +81,8 @@ def cmd_admin(args):
         scanner=config.scanner,
         timestamp=config.timestamp,
     )
-    url = f"http://localhost:{args.port}/"
+    display_host = "localhost" if args.host == "0.0.0.0" else args.host
+    url = f"http://{display_host}:{args.port}/"
     print("=" * 50)
     print(f"Lab Notebook (admin view): {url}")
     print("Local use only — unauthenticated.")
@@ -90,7 +91,7 @@ def cmd_admin(args):
         app.start_background_scan()
     if not args.no_browser:
         threading.Timer(1.0, lambda: open_app_window(url)).start()
-    app.run(debug=args.debug, port=args.port)
+    app.run(debug=args.debug, host=args.host, port=args.port)
     return 0
 
 
@@ -217,14 +218,15 @@ def cmd_backup(args):
         scanner=config.scanner,
         timestamp=config.timestamp,
     )
-    url = f"http://localhost:{args.port}/"
+    display_host = "localhost" if args.host == "0.0.0.0" else args.host
+    url = f"http://{display_host}:{args.port}/"
     print("=" * 50)
     print(f"Lab Notebook backup: {url}")
     print("Select experiments/files, then click Backup.")
     print("=" * 50)
     if not args.no_browser:
         threading.Timer(1.0, lambda: open_app_window(url)).start()
-    app.run(debug=False, port=args.port)
+    app.run(debug=False, host=args.host, port=args.port)
     return 0
 
 
@@ -316,6 +318,7 @@ def build_parser():
     p = sub.add_parser("admin", help="start the server and open the admin/authoring view")
     p.add_argument("--scan", action="store_true", help="run an SDGL scan on startup")
     p.add_argument("--port", type=int, default=5000)
+    p.add_argument("--host", default="127.0.0.1", help="bind address (use 0.0.0.0 for Tailscale/LAN access)")
     p.add_argument("--debug", action="store_true")
     p.add_argument("--no-browser", action="store_true", help="do not open a browser")
     p.set_defaults(func=cmd_admin)
@@ -350,6 +353,7 @@ def build_parser():
 
     p = sub.add_parser("backup", help="launch the data backup flow (step 8)")
     p.add_argument("--port", type=int, default=5000)
+    p.add_argument("--host", default="127.0.0.1", help="bind address (use 0.0.0.0 for Tailscale/LAN access)")
     p.add_argument("--no-browser", action="store_true", help="do not open a browser")
     p.set_defaults(func=cmd_backup)
 

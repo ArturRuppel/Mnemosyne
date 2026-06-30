@@ -34,7 +34,7 @@ POSTER_MODAL = '''
         <div class="poster-modal-bar">
             <span class="poster-modal-title" id="poster-modal-title"></span>
             <span class="poster-modal-actions">
-                <span class="poster-modal-hint">Scroll to zoom · drag to pan · double-click to reset</span>
+                <span class="poster-modal-hint">Scroll/pinch to zoom · drag to pan · double-click to reset</span>
                 <button class="poster-modal-close" type="button" data-close aria-label="Close">&times;</button>
             </span>
         </div>
@@ -50,14 +50,15 @@ POSTER_MODAL_SCRIPT = '''
         var img = document.getElementById('poster-modal-img');
         var titleEl = document.getElementById('poster-modal-title');
         var scale = 1, tx = 0, ty = 0;
-        var dragging = false, moved = false, lastX = 0, lastY = 0;
         var MIN = 0.2, MAX = 20;
+        var pointers = new Map();
+        var lastMidX = 0, lastMidY = 0, lastPinchDist = 0;
+        var moved = false;
 
         function apply() {
             paper.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
         }
         function fit() {
-            // Center the white paper (sized to the file) in the stage at 1:1.
             scale = 1;
             tx = Math.max(0, (stage.clientWidth - paper.clientWidth) / 2);
             ty = Math.max(0, (stage.clientHeight - paper.clientHeight) / 2);
@@ -81,39 +82,82 @@ POSTER_MODAL_SCRIPT = '''
             document.body.style.overflow = '';
         }
 
+        // Wheel: scroll-to-zoom for mouse / trackpad.
         stage.addEventListener('wheel', function (e) {
             e.preventDefault();
             var rect = stage.getBoundingClientRect();
             var dx = e.clientX - rect.left, dy = e.clientY - rect.top;
             var ns = Math.min(MAX, Math.max(MIN, scale * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
             var ratio = ns / scale;
-            // Keep the point under the cursor fixed while zooming.
             tx = dx - ratio * (dx - tx);
             ty = dy - ratio * (dy - ty);
             scale = ns;
             apply();
         }, { passive: false });
 
+        // Re-snapshot midpoint and pinch distance from the current pointer set.
+        function initGesture() {
+            var pts = Array.from(pointers.values());
+            if (pts.length >= 2) {
+                lastMidX = (pts[0].x + pts[1].x) / 2;
+                lastMidY = (pts[0].y + pts[1].y) / 2;
+                lastPinchDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+            } else if (pts.length === 1) {
+                lastMidX = pts[0].x; lastMidY = pts[0].y;
+                lastPinchDist = 0;
+            }
+        }
+
         stage.addEventListener('pointerdown', function (e) {
-            dragging = true; moved = false;
-            lastX = e.clientX; lastY = e.clientY;
-            stage.classList.add('grabbing');
+            pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
             stage.setPointerCapture(e.pointerId);
+            stage.classList.add('grabbing');
+            moved = false;
+            initGesture();
         });
+
         stage.addEventListener('pointermove', function (e) {
-            if (!dragging) return;
-            tx += e.clientX - lastX;
-            ty += e.clientY - lastY;
-            lastX = e.clientX; lastY = e.clientY;
+            if (!pointers.has(e.pointerId)) return;
+            pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            var pts = Array.from(pointers.values());
+
+            var midX, midY, dist;
+            if (pts.length >= 2) {
+                midX = (pts[0].x + pts[1].x) / 2;
+                midY = (pts[0].y + pts[1].y) / 2;
+                dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+            } else {
+                midX = pts[0].x; midY = pts[0].y; dist = 0;
+            }
+
+            // Unified pan + pinch: keep the point under lastMid fixed at midpoint,
+            // scaling by dist/lastPinchDist. When one finger is active, ratio=1
+            // and this reduces to pure translation.
+            var rect = stage.getBoundingClientRect();
+            var newScale = (pts.length >= 2 && lastPinchDist > 0)
+                ? Math.min(MAX, Math.max(MIN, scale * dist / lastPinchDist))
+                : scale;
+            var ratio = newScale / scale;
+            tx = (midX - rect.left) - ratio * ((lastMidX - rect.left) - tx);
+            ty = (midY - rect.top)  - ratio * ((lastMidY - rect.top)  - ty);
+            scale = newScale;
+
+            lastMidX = midX; lastMidY = midY; lastPinchDist = dist;
             moved = true;
             apply();
         });
-        function endDrag() {
-            dragging = false;
-            stage.classList.remove('grabbing');
+
+        function endPointer(e) {
+            pointers.delete(e.pointerId);
+            if (pointers.size === 0) {
+                stage.classList.remove('grabbing');
+            } else {
+                // One finger lifted — re-anchor so the remaining finger doesn't jump.
+                initGesture();
+            }
         }
-        stage.addEventListener('pointerup', endDrag);
-        stage.addEventListener('pointercancel', endDrag);
+        stage.addEventListener('pointerup', endPointer);
+        stage.addEventListener('pointercancel', endPointer);
         stage.addEventListener('dblclick', fit);
 
         // A click on the empty dark stage (not the paper, and not a drag) closes.
