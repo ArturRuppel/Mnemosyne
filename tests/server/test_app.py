@@ -374,6 +374,15 @@ def test_served_page_is_installable(client):
     assert 'name="theme-color"' in html
 
 
+def test_sdgl_page_is_installable(client):
+    # / now serves the tab shell — confirm sdgl.html is still independently
+    # installable at its own route now that it's no longer the index page.
+    html = client.get("/sdgl.html").get_data(as_text=True)
+    assert '<link rel="manifest" href="/manifest.webmanifest">' in html
+    assert "navigator.serviceWorker.register('/sw.js')" in html
+    assert 'name="theme-color"' in html
+
+
 # --- brand favicon / logo ---------------------------------------------------
 
 def test_favicon_assets_served(client):
