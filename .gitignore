@@ -18,6 +18,7 @@ labbook.toml
 catalog/*.html
 !catalog/home_template.html
 !catalog/sdgl.html
+!catalog/shell.html
 
 # Python
 __pycache__/

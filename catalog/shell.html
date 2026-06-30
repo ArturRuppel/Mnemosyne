@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Notebook</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+        body {
+            display: flex; flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #eef1f4;
+        }
+        .tab-strip {
+            display: flex; align-items: stretch; background: #263646;
+            overflow-x: auto; flex: 0 0 auto;
+        }
+        .tab {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.55rem 0.6rem 0.55rem 0.9rem;
+            color: #d7e0e7; cursor: pointer; white-space: nowrap;
+            border-right: 1px solid #1b2733; max-width: 16rem; flex: 0 0 auto;
+        }
+        .tab.active { background: #eef1f4; color: #27313a; }
+        .tab-title { overflow: hidden; text-overflow: ellipsis; }
+        .tab-close {
+            border: none; background: transparent; color: inherit; font-size: 1rem;
+            line-height: 1; cursor: pointer; padding: 0.1rem 0.3rem; border-radius: 4px;
+        }
+        .tab-close:hover { background: rgba(0, 0, 0, 0.15); }
+        .tab-new {
+            flex: 0 0 auto; border: none; background: transparent; color: #d7e0e7;
+            font-size: 1.1rem; padding: 0.55rem 0.9rem; cursor: pointer;
+        }
+        .tab-new:hover { background: rgba(255, 255, 255, 0.08); }
+        .iframe-stack { flex: 1 1 auto; position: relative; }
+        .iframe-stack iframe {
+            position: absolute; inset: 0; width: 100%; height: 100%; border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="tab-strip" id="tab-strip"></div>
+    <div class="iframe-stack" id="iframe-stack"></div>
+    <script>
+        // Same-origin marker tabnav.js checks via window.parent.__ELN_SHELL__
+        // to tell whether it's running inside this shell or standalone.
+        window.__ELN_SHELL__ = true;
+
+        var STORAGE_KEY = 'eln-shell-tabs';
+        var DEFAULT_URL = '/sdgl.html';
+        var DEFAULT_TITLE = 'Data Explorer';
+
+        var tabs = [];
+        var activeId = null;
+        var nextId = 1;
+
+        function genId() { return 'tab-' + (nextId++); }
+
+        function loadState() {
+            var raw;
+            try { raw = sessionStorage.getItem(STORAGE_KEY); } catch (e) { raw = null; }
+            if (raw) {
+                try {
+                    var parsed = JSON.parse(raw);
+                    if (parsed && Array.isArray(parsed.tabs) && parsed.tabs.length) {
+                        tabs = parsed.tabs;
+                        nextId = parsed.nextId || (tabs.length + 1);
+                        activeId = parsed.activeId && tabs.some(function (t) { return t.id === parsed.activeId; })
+                            ? parsed.activeId : tabs[0].id;
+                        return;
+                    }
+                } catch (e) { /* malformed; fall through to a fresh default tab */ }
+            }
+            var id = genId();
+            tabs = [{id: id, url: DEFAULT_URL, title: DEFAULT_TITLE}];
+            activeId = id;
+        }
+
+        function saveState() {
+            try {
+                sessionStorage.setItem(STORAGE_KEY,
+                    JSON.stringify({tabs: tabs, activeId: activeId, nextId: nextId}));
+            } catch (e) { /* sessionStorage unavailable; tabs just won't persist */ }
+        }
+
+        function findTab(id) {
+            for (var i = 0; i < tabs.length; i++) if (tabs[i].id === id) return tabs[i];
+            return null;
+        }
+
+        function createTab(url) {
+            var id = genId();
+            tabs.push({id: id, url: url, title: url});
+            activeId = id;
+            saveState();
+            render();
+        }
+
+        function closeTab(id) {
+            var idx = tabs.findIndex(function (t) { return t.id === id; });
+            if (idx === -1) return;
+            tabs.splice(idx, 1);
+            if (!tabs.length) {
+                // The shell is never left empty.
+                var freshId = genId();
+                tabs = [{id: freshId, url: DEFAULT_URL, title: DEFAULT_TITLE}];
+                activeId = freshId;
+            } else if (activeId === id) {
+                activeId = tabs[Math.max(0, idx - 1)].id;
+            }
+            saveState();
+            render();
+        }
+
+        function setActiveTab(id) {
+            if (!findTab(id)) return;
+            activeId = id;
+            saveState();
+            render();
+        }
+
+        function setActiveTabUrl(url) {
+            var tab = findTab(activeId);
+            if (!tab) return;
+            tab.url = url;
+            tab.title = url; // placeholder until the loaded page posts its real <title>
+            saveState();
+            render();
+        }
+
+        function renderTabStrip() {
+            var strip = document.getElementById('tab-strip');
+            strip.innerHTML = '';
+            tabs.forEach(function (tab) {
+                var el = document.createElement('div');
+                el.className = 'tab' + (tab.id === activeId ? ' active' : '');
+                el.addEventListener('click', function () { setActiveTab(tab.id); });
+
+                var title = document.createElement('span');
+                title.className = 'tab-title';
+                title.textContent = tab.title;
+                el.appendChild(title);
+
+                var close = document.createElement('button');
+                close.className = 'tab-close';
+                close.textContent = '×';
+                close.title = 'Close tab';
+                close.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    closeTab(tab.id);
+                });
+                el.appendChild(close);
+
+                strip.appendChild(el);
+            });
+
+            var newBtn = document.createElement('button');
+            newBtn.className = 'tab-new';
+            newBtn.textContent = '+';
+            newBtn.title = 'New Data Explorer tab';
+            newBtn.addEventListener('click', function () { createTab(DEFAULT_URL); });
+            strip.appendChild(newBtn);
+        }
+
+        function renderIframes() {
+            var stack = document.getElementById('iframe-stack');
+            var frames = {};
+            Array.prototype.forEach.call(stack.querySelectorAll('iframe'), function (f) {
+                frames[f.dataset.tabId] = f;
+            });
+            tabs.forEach(function (tab) {
+                var frame = frames[tab.id];
+                if (!frame) {
+                    frame = document.createElement('iframe');
+                    frame.dataset.tabId = tab.id;
+                    stack.appendChild(frame);
+                } else {
+                    delete frames[tab.id];
+                }
+                // Re-assigning the same resolved URL is a no-op (no reload),
+                // so it's safe to do this unconditionally on every render —
+                // only an actual URL change navigates the iframe.
+                frame.src = tab.url;
+                frame.style.display = tab.id === activeId ? 'block' : 'none';
+            });
+            // Anything left in `frames` belonged to a tab that just closed.
+            Object.keys(frames).forEach(function (id) { frames[id].remove(); });
+        }
+
+        function render() {
+            renderTabStrip();
+            renderIframes();
+        }
+
+        window.addEventListener('message', function (e) {
+            if (e.origin !== window.location.origin) return;
+            var data = e.data || {};
+            if (data.type === 'tabnav:navigate') {
+                if (data.newTab) {
+                    createTab(data.url);
+                } else {
+                    setActiveTabUrl(data.url);
+                }
+            } else if (data.type === 'tabnav:title') {
+                var stack = document.getElementById('iframe-stack');
+                var frame = Array.prototype.find.call(stack.querySelectorAll('iframe'),
+                    function (f) { return f.contentWindow === e.source; });
+                if (!frame) return;
+                var tab = findTab(frame.dataset.tabId);
+                if (!tab) return;
+                tab.title = data.title;
+                saveState();
+                renderTabStrip();
+            }
+        });
+
+        loadState();
+        render();
+    </script>
+</body>
+</html>
