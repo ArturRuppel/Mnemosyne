@@ -1,3 +1,8 @@
+// DEPRECATED — the PWA tab shell this drove was retired for limited usefulness.
+// No generated page includes this script and the server no longer serves it; the
+// file is kept only as scaffold in case the multitab shell is ever revived. See
+// also catalog/shell.html.
+//
 // Shared by every generated/static catalog page. Provides navigate(url, opts)
 // and intercepts clicks so that, inside the installed PWA's tab shell, plain
 // clicks replace the active tab and middle-click/Ctrl-Cmd-click open a new

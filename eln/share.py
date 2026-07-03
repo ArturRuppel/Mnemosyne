@@ -38,10 +38,9 @@ _NAV_BLOCK = re.compile(r'[ \t]*<div class="nav">.*?</div>\s*?\n?', re.DOTALL)
 # the catalog pages sit flat at the bundle root.
 _CATALOG_ASSETS = Path(__file__).resolve().parents[1] / "catalog"
 _BRAND_FILES = ("eln-logo.svg", "favicon-16.png", "favicon-32.png", "apple-touch-icon.png")
-# tabnav.js (the tab-shell click interceptor every generated page now carries)
-# degrades to plain navigation outside the shell — see its own "share bundle"
-# fallback comment — so it's copied in rather than stripped like auth.js.
-_APP_SCRIPTS = ("tabnav.js",)
+# The tab-shell (tabnav.js) was retired — generated pages no longer reference it,
+# so there is nothing extra to bundle here beyond the brand assets.
+_APP_SCRIPTS = ()
 _FAVICON_HEAD = (
     '    <link rel="icon" type="image/svg+xml" href="eln-logo.svg">\n'
     '    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">\n'
@@ -51,8 +50,8 @@ _FAVICON_HEAD = (
 
 
 def _copy_brand_assets(dest):
-    """Copy the favicon/logo set and tabnav.js into the bundle root so the tab
-    icon resolves offline and every page's shell-aware links keep working."""
+    """Copy the favicon/logo set into the bundle root so the tab icon resolves
+    offline."""
     for name in (*_BRAND_FILES, *_APP_SCRIPTS):
         src = _CATALOG_ASSETS / name
         if src.is_file():

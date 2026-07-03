@@ -150,6 +150,25 @@ def test_hidden_paths_never_recorded(data_root):
     assert not any(".DS_Store" in p for p in paths)
 
 
+def test_zarr_store_recorded_but_not_descended_into(data_root):
+    """A Zarr store is a directory containing thousands of small chunk files
+    nested by dimension. It must be recorded as a single opaque directory
+    location, never walked into chunk-by-chunk."""
+    root, db, _ = data_root
+    data = root / "data"
+    _touch(data / "TFMSP-01" / "analysis" / "cells.zarr" / "0" / "0" / "0" / "0", 0)
+    _touch(data / "TFMSP-01" / "analysis" / "cells.zarr" / ".zarray", 0)
+
+    sdgl = SDGL(root)
+    sdgl.scan_from_config()
+    conn = sdgl.connect()
+    paths = [r["path"] for r in conn.execute("SELECT path FROM file_locations")]
+    conn.close()
+
+    zarr_paths = [p for p in paths if "cells.zarr" in p]
+    assert zarr_paths == [str(data / "TFMSP-01" / "analysis" / "cells.zarr")]
+
+
 def test_rescan_self_heals_recorded_hidden_path(data_root):
     """A previously-recorded hidden path is pruned on the next scan."""
     root, db, _ = data_root

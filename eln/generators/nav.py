@@ -20,10 +20,10 @@ CORE_NAV = [
 # natural (core-then-plugin) order and are appended after the known ones, so a
 # new third-party plugin still shows up.
 NAV_ORDER = [
-    "Data Explorer",
-    "Experiment Catalog",
     "Reports",
+    "Experiment Catalog",
     "Protocols",
+    "Data Explorer",
     "Code",
     "Documents",
     "Presentations",

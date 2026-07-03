@@ -204,6 +204,17 @@ def _is_hidden(name):
     return name.startswith(".")
 
 
+# Chunked array stores hold their data as thousands of small chunk files
+# nested by dimension. Descending into one turns a scan into a per-chunk
+# filesystem crawl (brutal over a network mount), so they are recorded as a
+# single opaque directory and never walked into.
+OPAQUE_STORE_SUFFIXES = (".zarr", ".n5")
+
+
+def _is_opaque_store(name):
+    return name.endswith(OPAQUE_STORE_SUFFIXES)
+
+
 def _notebook_markdown(nb):
     """Concatenated source of a notebook's markdown cells (code/outputs dropped).
 
@@ -912,8 +923,12 @@ class SDGL:
                     continue
                 present_root_names.append(root_name)
                 for dirpath, dirnames, _filenames in os.walk(root_path):
-                    # Prune in place so os.walk does not descend into hidden dirs.
-                    dirnames[:] = sorted(d for d in dirnames if not _is_hidden(d))
+                    # Prune in place so os.walk does not descend into hidden dirs
+                    # or opaque chunked-array stores (Zarr, N5, ...).
+                    dirnames[:] = sorted(
+                        d for d in dirnames
+                        if not _is_hidden(d) and not _is_opaque_store(d)
+                    )
                     matched = []
                     for dirname in list(dirnames):
                         parsed = parse_id_folder(dirname)
@@ -1160,6 +1175,9 @@ class SDGL:
                     hash_path=(str(entry) if content_hash and not is_dir else None),
                     hash_max_bytes=hash_max_bytes,
                 )
+            # Opaque chunked-array stores are recorded above like any other
+            # directory, but never descended into.
+            dirnames[:] = [d for d in dirnames if not _is_opaque_store(d)]
 
     def get_node(self, node_id):
         self.sync_eln()
