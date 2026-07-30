@@ -100,6 +100,20 @@ def _read_notebook_markdown_cells(path):
     ]
 
 
+def _bump_protocol_version(current):
+    """Return the next version string after *current* by incrementing its
+    trailing integer: "1.0"->"1.1", "2.9"->"2.10", "3"->"4", "1.0-beta"->
+    "1.1-beta". Falls back to appending ".1" when there is no numeric component,
+    and to "1.0" for an empty/None version. Bumps the minor (last dotted)
+    component rather than the major, since every edit is a routine revision."""
+    if not current:
+        return "1.0"
+    m = re.search(r"(\d+)(\D*)$", current)
+    if not m:
+        return current + ".1"
+    return current[: m.start(1)] + str(int(m.group(1)) + 1) + m.group(2)
+
+
 def _apply_markdown_cell_edits(path, edits):
     """Overwrite the source of the markdown cells named in *edits* (a list of
     ``{index, source}``) in the notebook at *path*, leaving code cells and all
@@ -881,7 +895,7 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
                 VALUES (?, ?, ?, ?, ?, 1)
                 """,
                 (
-                    data["name"], data["version"], data.get("description"),
+                    data["name"], data.get("version") or "1.0", data.get("description"),
                     data.get("content"), data.get("file_path"),
                 ),
             )
@@ -896,28 +910,57 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
 
     @app.route("/api/protocols/<int:protocol_id>", methods=["PUT"])
     def update_protocol(protocol_id):
+        # Saving an edit does NOT overwrite the row in place: it archives the
+        # current version (is_latest = 0) and inserts a new row with an
+        # auto-incremented version as the latest. This keeps every edited
+        # protocol as intact, citable history — experiments stay pinned to the
+        # exact protocol_id (version) they were run under. The client-supplied
+        # version, if any, is ignored; the server owns the number.
         import sqlite3
         data = request.json
         conn = get_db()
         cursor = conn.cursor()
-        fields = ["name", "version", "description", "content", "file_path"]
-        set_clauses = []
-        params = []
-        for field in fields:
-            if field in data:
-                set_clauses.append(f"{field} = ?")
-                params.append(data[field])
-        if not set_clauses:
+        cursor.execute("SELECT * FROM protocols WHERE id = ?", (protocol_id,))
+        old = cursor.fetchone()
+        if old is None:
             conn.close()
-            return jsonify({"error": "No fields to update"}), 400
-        params.append(protocol_id)
-        query = f"UPDATE protocols SET {', '.join(set_clauses)} WHERE id = ?"
-        try:
-            cursor.execute(query, params)
-            conn.commit()
-            if cursor.rowcount > 0:
-                return jsonify({"success": True, "message": "Protocol updated"})
             return jsonify({"error": "Protocol not found"}), 404
+        old = _row_to_dict(old)
+        name = data.get("name") or old["name"]
+        # Bump from the edited row's own version, then skip any version string
+        # that already exists for this name (UNIQUE(name, version)).
+        new_version = _bump_protocol_version(old["version"])
+        while True:
+            cursor.execute(
+                "SELECT 1 FROM protocols WHERE name = ? AND version = ?",
+                (name, new_version),
+            )
+            if cursor.fetchone() is None:
+                break
+            new_version = _bump_protocol_version(new_version)
+        try:
+            cursor.execute("UPDATE protocols SET is_latest = 0 WHERE name = ?", (name,))
+            cursor.execute(
+                """
+                INSERT INTO protocols (name, version, description, content, file_path, is_latest)
+                VALUES (?, ?, ?, ?, ?, 1)
+                """,
+                (
+                    name,
+                    new_version,
+                    data.get("description", old["description"]),
+                    data.get("content", old["content"]),
+                    data.get("file_path", old["file_path"]),
+                ),
+            )
+            new_id = cursor.lastrowid
+            conn.commit()
+            return jsonify({
+                "success": True,
+                "id": new_id,
+                "version": new_version,
+                "message": f"Protocol saved as v{new_version}",
+            })
         except sqlite3.IntegrityError as e:
             conn.rollback()
             return jsonify({"error": str(e)}), 400

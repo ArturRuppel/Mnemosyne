@@ -180,6 +180,49 @@ def test_provenance_verify_endpoint(tmp_path):
 
 # --- protocols & reports ----------------------------------------------------
 
+def test_bump_protocol_version_helper():
+    from eln.server.app import _bump_protocol_version
+    assert _bump_protocol_version("1.0") == "1.1"
+    assert _bump_protocol_version("2.9") == "2.10"
+    assert _bump_protocol_version("3") == "4"
+    assert _bump_protocol_version("1.0-beta") == "1.1-beta"
+    assert _bump_protocol_version("draft") == "draft.1"
+    assert _bump_protocol_version("") == "1.0"
+    assert _bump_protocol_version(None) == "1.0"
+
+
+def test_editing_a_protocol_bumps_version_and_keeps_history(client):
+    # Seeded protocol is id=10, 'Gel casting' v1, is_latest=1.
+    res = client.put("/api/protocols/10", json={"content": "# Gel casting v2"})
+    body = res.get_json()
+    assert res.status_code == 200
+    assert body["version"] == "2"          # "1" -> "2"
+    new_id = body["id"]
+    assert new_id != 10
+
+    # The default listing shows only the latest, which is now the new row.
+    latest = client.get("/api/protocols").get_json()
+    gel = [p for p in latest if p["name"] == "Gel casting"]
+    assert len(gel) == 1
+    assert gel[0]["id"] == new_id
+    assert gel[0]["version"] == "2"
+    assert gel[0]["content"] == "# Gel casting v2"
+
+    # The old version is preserved as history (?all=true) and demoted.
+    everything = client.get("/api/protocols?all=true").get_json()
+    old = [p for p in everything if p["id"] == 10][0]
+    assert old["version"] == "1"
+    assert old["content"] == "# Gel casting"
+    assert old["is_latest"] == 0
+
+
+def test_repeated_edits_skip_existing_version_numbers(client):
+    # Manually create a v2 so the next bump from v1 must skip past it.
+    client.post("/api/protocols", json={"name": "Gel casting", "version": "2", "content": "x"})
+    res = client.put("/api/protocols/10", json={"content": "# bumped"})
+    assert res.get_json()["version"] == "3"   # "1"->"2" is taken, so "3"
+
+
 def test_protocols_and_reports_crud(client):
     assert client.get("/api/protocols").get_json()[0]["name"] == "Gel casting"
 

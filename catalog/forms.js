@@ -459,8 +459,9 @@
         '<form id="protocol-form"><input type="hidden" id="proto-id" /><div class="form-grid">' +
         '<div class="form-group"><label for="proto-name">Protocol Name *</label>' +
         '<input type="text" id="proto-name" required placeholder="e.g., Spheroid Culture Protocol" /></div>' +
-        '<div class="form-group"><label for="proto-version">Version *</label>' +
-        '<input type="text" id="proto-version" required placeholder="e.g., 1.0, 2.1" /></div>' +
+        '<div class="form-group"><label for="proto-version">Version</label>' +
+        '<input type="text" id="proto-version" readonly />' +
+        '<small id="proto-version-help" style="color:#666;display:block;margin-top:0.25rem;"></small></div>' +
         '<div class="form-group full-width"><label for="proto-description">Description</label>' +
         '<textarea id="proto-description" placeholder="Brief description of the protocol..."></textarea></div>' +
         '<div class="form-group full-width"><label for="proto-content">Protocol Content (Markdown) *</label>' +
@@ -473,6 +474,7 @@
     forms.openProtocolForm = async function (id) {
         const body = openModal(PROTOCOL_FORM_HTML);
         body.querySelector('#proto-form-title').textContent = id ? 'Edit protocol' : 'Add protocol';
+        const help = body.querySelector('#proto-version-help');
         if (id) {
             const resp = await fetch(API + '/protocols/' + id);
             const proto = await resp.json();
@@ -482,6 +484,10 @@
             body.querySelector('#proto-description').value = proto.description || '';
             body.querySelector('#proto-content').value = proto.content || '';
             body.querySelector('#proto-file-path').value = proto.file_path || '';
+            help.textContent = 'Current version. Saving keeps this as history and creates the next version automatically.';
+        } else {
+            body.querySelector('#proto-version').value = '1.0';
+            help.textContent = 'First version. Later edits bump this automatically.';
         }
         wireCancel(body);
         body.querySelector('#protocol-form').addEventListener('submit', async function (e) {
