@@ -2,6 +2,7 @@
 byte-identical-regeneration guarantee (no timestamp churn)."""
 
 import os
+import re
 import sqlite3
 from datetime import datetime
 
@@ -129,6 +130,28 @@ def test_catalog_has_ids_and_derived_dates(data_root):
     assert "TFMSP-01" in html
     assert "TFMSP-02" in html
     assert expected[1] in html and expected[2] in html
+
+
+def test_catalog_orders_by_derived_date_and_sinks_undated(data_root):
+    """The catalog is a chronological index: rows come out newest-first by the
+    file-derived date, and rep 3 — which has no raw files, so no derivable date —
+    lands last rather than sorting as if it were the oldest."""
+    root, db, expected = data_root
+    generate_catalog(root)
+    html = (root / "catalog" / "experiments.html").read_text()
+
+    # Newest first, undated last.
+    order = re.findall(r'data-date="([^"]*)"', html)
+    assert order == [expected[2], expected[1], ""]
+
+    # The undated row renders the explicit "no raw files" dash, not a blank cell.
+    assert "date-missing" in html
+
+    # And the client-side comparator keeps blanks at the bottom in *both*
+    # directions, so clicking Date into oldest-first does not float the undated
+    # row to the top. Asserted on the emitted script since there is no JS runtime
+    # in this suite.
+    assert "if (!aValue !== !bValue) {" in html
 
 
 def test_reports_inject_series_overview(data_root):

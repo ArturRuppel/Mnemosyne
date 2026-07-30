@@ -408,6 +408,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 const aValue = a.dataset[sortColumn] || '';
                 const bValue = b.dataset[sortColumn] || '';
 
+                // Rows with no value for this column always sink to the bottom,
+                // whichever way the column is sorted. An experiment with no
+                // derivable date has *missing* data, not the earliest date, so it
+                // must not lead an ascending (oldest-first) sort of the Date
+                // column — that would misread as "this ran first".
+                if (!aValue !== !bValue) {{
+                    return aValue ? -1 : 1;
+                }}
+
                 if (sortDirection === 'asc') {{
                     return aValue.localeCompare(bValue);
                 }} else {{
