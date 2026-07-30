@@ -103,6 +103,33 @@
     color: white;
 }
 
+/* Per-row action cell in the experiments table: Edit + Copy on one line.
+   Slightly tighter padding so both fit the narrow action column. */
+.eln-row-actions {
+    white-space: nowrap;
+}
+
+.eln-row-actions .eln-edit-btn {
+    padding: 0.28rem 0.55rem;
+}
+
+.eln-row-actions .eln-edit-btn + .eln-edit-btn {
+    margin-left: 0.3rem;
+}
+
+/* Secondary row action (Copy): same shape as Edit, quieter fill, so a row
+   doesn't read as two equally primary actions. */
+.eln-edit-btn.secondary {
+    background: transparent;
+    color: #286b9f;
+    box-shadow: inset 0 0 0 1px #9dbdd6;
+}
+
+.eln-edit-btn.secondary:hover {
+    background: #eaf2f8;
+    color: #1f567f;
+}
+
 /* Tight right-side cluster for a card header: version pill + Edit/Export. */
 .eln-card-actions {
     display: inline-flex;

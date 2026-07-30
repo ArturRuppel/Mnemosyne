@@ -87,6 +87,80 @@ def test_create_new_title_needs_code(client):
     assert resp.get_json()["experiment_id"] == "MIGRA-01"
 
 
+def test_copy_experiment_reuses_setup_on_the_next_rep(client):
+    """The catalog's Copy button GETs an experiment, drops its repetition, and
+    POSTs the rest back. This is that round-trip: every setup field survives and
+    the copy lands on the next free repetition rather than colliding with the
+    source's identity."""
+    setup = {
+        "cell_types": "MDCK, HaCaT",
+        "microscope": "Nikon TiE2 Spinning Disk CSU",
+        "live_or_fixed": "Live",
+        "comments": "48h timelapse, 10 min interval",
+        "tags": ["timelapse", "confluent"],
+        "channels": [
+            {"channel_order": 1, "channel_label": "Blue", "target": "DAPI",
+             "modality": None},
+            {"channel_order": 5, "channel_label": "Brightfield", "target": None,
+             "modality": "Phase contrast"},
+        ],
+        "protocol_ids": [10],
+    }
+    assert client.put("/api/experiments/1", json=setup).status_code == 200
+
+    source = client.get("/api/experiments/1").get_json()
+    assert source["experiment_id"] == "TFMSP-01"
+
+    # Exactly what the form submits for a copy: the source's values, with the
+    # repetition cleared so the server allocates the next one.
+    payload = {
+        "experiment_type": source["experiment_type"],
+        "code": source["code"],
+        "repetition": None,
+        "cell_types": source["cell_types"],
+        "microscope": source["microscope"],
+        "live_or_fixed": source["live_or_fixed"],
+        "comments": source["comments"],
+        "thumbnail_path": source["thumbnail_path"],
+        "tags": source["tags"],
+        "channels": source["channels"],
+        "protocol_ids": source["protocol_ids"],
+    }
+    created = client.post("/api/experiments", json=payload).get_json()
+    assert created["experiment_id"] == "TFMSP-02"
+
+    copy = client.get("/api/experiments/" + str(created["id"])).get_json()
+    assert copy["id"] != source["id"]
+    assert copy["repetition"] != source["repetition"]
+    for field in ("experiment_type", "code", "cell_types", "microscope",
+                  "live_or_fixed", "comments"):
+        assert copy[field] == source[field], field
+    assert sorted(copy["tags"]) == sorted(source["tags"])
+    assert copy["channels"] == source["channels"]
+    assert copy["protocol_ids"] == source["protocol_ids"]
+
+    # The source is untouched — copying is not a rename.
+    assert client.get("/api/experiments/1").get_json()["experiment_id"] == "TFMSP-01"
+
+
+def test_copy_of_an_excluded_experiment_becomes_an_active_rep(client):
+    """Clearing the repetition also clears the X (excluded) marker, so copying a
+    discarded run starts a normal one instead of another excluded one."""
+    src = client.post(
+        "/api/experiments",
+        json={"experiment_type": "Traction Force", "repetition": "X1"},
+    ).get_json()
+    assert src["experiment_id"] == "TFMSP-X01"
+
+    source = client.get("/api/experiments/" + str(src["id"])).get_json()
+    created = client.post(
+        "/api/experiments",
+        json={"experiment_type": source["experiment_type"],
+              "code": source["code"], "repetition": None},
+    ).get_json()
+    assert created["experiment_id"] == "TFMSP-02"
+
+
 def test_update_and_delete_experiment(client):
     client.put("/api/experiments/1", json={"cell_types": "HUVEC", "tags": ["migration"]})
     got = client.get("/api/experiments/1").get_json()

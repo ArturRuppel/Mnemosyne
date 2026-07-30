@@ -188,6 +188,7 @@
             var id = row.getAttribute('data-id');
             if (!id) return;
             var td = document.createElement('td');
+            td.className = 'eln-row-actions';
             var a = document.createElement('a');
             a.className = 'eln-edit-btn';
             a.href = '#';
@@ -197,6 +198,18 @@
                 window.elnForms.openExperimentForm(id);
             });
             td.appendChild(a);
+            // Copy opens the *add* form prefilled from this row — for the common
+            // case of running the same experiment again with the same setup.
+            var copy = document.createElement('a');
+            copy.className = 'eln-edit-btn secondary';
+            copy.href = '#';
+            copy.textContent = 'Copy';
+            copy.title = 'Create a new experiment prefilled from this one';
+            copy.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.elnForms.openExperimentForm(null, {copyFrom: id});
+            });
+            td.appendChild(copy);
             row.appendChild(td);
         });
         var headerRow = document.querySelector('#experiments-table thead tr');
@@ -204,8 +217,8 @@
             var th = document.createElement('th');
             th.textContent = '';
             th.style.cursor = 'default';
-            th.style.width = '64px';      // keep the action column tight…
-            th.style.minWidth = '64px';   // …so it doesn't force horizontal scroll
+            th.style.width = '104px';     // keep the action column tight…
+            th.style.minWidth = '104px';  // …so Edit+Copy fit without wrapping
             headerRow.appendChild(th);
         }
         addPageAddButton('+ Add experiment', function() {

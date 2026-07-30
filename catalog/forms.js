@@ -331,7 +331,7 @@
         '<small id="exp-code-hint" style="color:#6a7884;">Auto-filled for known titles; set a new 5-character code for a new title.</small></div>' +
         '<div class="form-group"><label for="exp-rep">Repetition</label>' +
         '<input type="text" id="exp-rep" maxlength="3" placeholder="e.g., 1, 03, X3, x03" pattern="[A-Za-z0-9]{1,3}" />' +
-        '<small style="color:#6a7884;">Optional X prefix marks excluded (X3, x03). Leave empty for next free.</small></div>' +
+        '<small id="exp-rep-hint" style="color:#6a7884;">Optional X prefix marks excluded (X3, x03). Leave empty for next free.</small></div>' +
         '<div class="form-group"><label for="exp-microscope">Microscope</label>' +
         '<input type="text" id="exp-microscope" list="microscopes-list" placeholder="e.g., Nikon TiE2 Spinning Disk CSU" /></div>' +
         '<div class="form-group"><label for="exp-live-fixed">Live or Fixed</label>' +
@@ -424,9 +424,16 @@
         };
     }
 
-    forms.openExperimentForm = async function (id) {
+    // Open the experiment modal in one of three modes:
+    //   openExperimentForm(id)                  -> edit that experiment (PUT)
+    //   openExperimentForm()                    -> blank new experiment (POST)
+    //   openExperimentForm(null, {copyFrom: id}) -> new experiment (POST) prefilled
+    //                                              from an existing one
+    forms.openExperimentForm = async function (id, options) {
+        const copyFrom = (options && options.copyFrom) || null;
         const body = openModal(EXPERIMENT_FORM_HTML);
-        body.querySelector('#exp-form-title').textContent = id ? 'Edit experiment' : 'Add experiment';
+        body.querySelector('#exp-form-title').textContent =
+            id ? 'Edit experiment' : (copyFrom ? 'Copy experiment' : 'Add experiment');
         currentTags = [];
         currentCellTypes = [];
         await Promise.all([loadFieldValues(), loadTagSuggestions(), loadIdentityMaps(), loadProtocolsForCheckboxes()]);
@@ -436,6 +443,19 @@
         if (id) {
             const resp = await fetch(API + '/experiments/' + id);
             populateExperimentForm(await resp.json());
+        } else if (copyFrom) {
+            const resp = await fetch(API + '/experiments/' + copyFrom);
+            populateExperimentForm(await resp.json());
+            // A copy is a fresh run of the same experiment, so it keeps the title,
+            // code and whole setup but must not inherit the source's repetition —
+            // (code, repetition) is the identity. Cleared so the server allocates
+            // the next free one, exactly as for a blank add.
+            body.querySelector('#exp-rep').value = '';
+            const repHint = body.querySelector('#exp-rep-hint');
+            if (repHint) {
+                repHint.textContent = 'Left empty so this copy becomes the next free repetition. ' +
+                    'Optional X prefix marks excluded (X3, x03).';
+            }
         } else {
             suggestCodeForTitle();
         }
