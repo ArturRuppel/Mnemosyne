@@ -9,8 +9,11 @@
 *.db-shm
 *.backup-*
 
-# Local unified config (ship labbook.toml.example; users copy it to labbook.toml)
+# Local unified config (ship labbook.toml.example; users copy it to labbook.toml).
+# The dated .bak-* copies are machine-local too and carry absolute data paths —
+# this is a public repo, so they must never be committed.
 labbook.toml
+labbook.toml.bak-*
 
 # Generated static catalog pages (produced by the generators at build time).
 # Static frontend assets that happen to be .html (templates, graph view) are

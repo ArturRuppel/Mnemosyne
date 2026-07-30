@@ -3,16 +3,21 @@
 from eln.generators.nav import render_nav
 from eln.plugins import NavLink, Plugin
 
+# Byte-exact expected nav. The link order is NAV_ORDER (eln/generators/nav.py),
+# not the order of CORE_NAV, and the trailing links come from discovered plugins
+# — so this block must be updated whenever NAV_ORDER is reshuffled or a bundled
+# plugin's NavLink changes.
 EXPECTED = (
     '<div class="nav">\n'
-    '        <a href="sdgl.html">Data Explorer</a>\n'
-    '        <a href="experiments.html">Experiment Catalog</a>\n'
     '        <a href="reports.html">Reports</a>\n'
+    '        <a href="experiments.html">Experiment Catalog</a>\n'
     '        <a href="protocols.html">Protocols</a>\n'
+    '        <a href="sdgl.html">Data Explorer</a>\n'
     '        <a href="code.html">Code</a>\n'
     '        <a href="documents.html">Documents</a>\n'
     '        <a href="presentations.html">Presentations</a>\n'
     '        <a href="posters.html">Posters</a>\n'
+    '        <a href="/litgraph/">Literature</a>\n'
     '    </div>'
 )
 

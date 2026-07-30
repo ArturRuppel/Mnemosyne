@@ -485,6 +485,8 @@ def test_pwa_icons_served_as_png(client):
 
 
 def test_served_page_is_installable(client):
+    # / serves the generated reports page, so generate it first.
+    assert client.post("/api/regenerate").status_code == 200
     html = client.get("/").get_data(as_text=True)
     assert '<link rel="manifest" href="/manifest.webmanifest">' in html
     assert "navigator.serviceWorker.register('/sw.js')" in html
@@ -492,8 +494,8 @@ def test_served_page_is_installable(client):
 
 
 def test_sdgl_page_is_installable(client):
-    # sdgl.html is served both at / and at its own route — confirm it stays
-    # independently installable at /sdgl.html too.
+    # sdgl.html is a shipped static page rather than the landing page (/ serves
+    # Reports) — confirm it is independently installable at its own route.
     html = client.get("/sdgl.html").get_data(as_text=True)
     assert '<link rel="manifest" href="/manifest.webmanifest">' in html
     assert "navigator.serviceWorker.register('/sw.js')" in html
@@ -516,6 +518,8 @@ def test_favicon_assets_served(client):
 
 
 def test_served_page_links_brand_favicon(client):
+    # / serves the generated reports page, so generate it first.
+    assert client.post("/api/regenerate").status_code == 200
     html = client.get("/").get_data(as_text=True)
     assert '<link rel="icon" type="image/svg+xml" href="/eln-logo.svg">' in html
     assert '<link rel="apple-touch-icon" href="/apple-touch-icon.png">' in html
@@ -641,15 +645,20 @@ def test_sdgl_page_served_with_overlay(client):
     assert client.get("/edit-overlay.js").status_code == 200
 
 
-def test_index_serves_explorer_with_overlay(client):
-    # The multitab tab shell was retired; / serves the Data Explorer (sdgl.html)
-    # again, with the edit overlay injected like any other content page.
+def test_index_serves_reports_with_overlay(client):
+    # The multitab tab shell was retired and the nav now leads with Reports, so /
+    # serves the generated reports page directly, with the edit overlay injected
+    # like any other content page. reports.html is generated, not shipped, so it
+    # 404s until the first regenerate.
+    assert client.get("/").status_code == 404
+    assert client.post("/api/regenerate").status_code == 200
+
     resp = client.get("/")
     assert resp.status_code == 200
     html = resp.get_data(as_text=True)
-    assert 'class="shell"' in html            # sdgl.html's explorer layout
-    assert 'id="tab-strip"' not in html       # no tab-shell chrome
-    assert "edit-overlay.js" in html          # overlay injected
+    assert "<title>Reports</title>" in html    # the reports page, not the shell
+    assert 'id="tab-strip"' not in html        # no tab-shell chrome
+    assert "edit-overlay.js" in html           # overlay injected
 
 
 def test_tabnav_js_not_served(client):

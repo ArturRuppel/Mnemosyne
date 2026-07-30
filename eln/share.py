@@ -18,8 +18,13 @@ from eln.generators import generate_all
 from eln.generators.protocols import generate_protocol_catalog
 from eln.generators.reports import generate_reports
 
-# Refs we never copy: external, in-page, or inline data URIs.
-_EXTERNAL = re.compile(r"^(?:[a-z]+:|//|#)")
+# Refs we never copy: external, in-page, inline data URIs, or root-relative.
+# A root-relative ref ("/litgraph/", "/") addresses one of the *server's* own
+# routes, not a file inside the data root, so it is unbundleable by definition:
+# it must not be resolved against the root (which would escape it) nor reported
+# as a missing asset. Such links are simply inert in a static bundle, like the
+# sibling catalog pages omitted from a single-item export.
+_EXTERNAL = re.compile(r"^(?:[a-z]+:|//|#|/)")
 # Copyable double-quoted ``src``/``href`` references in a generated page. Slide
 # decks reference assets in many other ways (single quotes, data-background, CSS
 # url()), but those are never scraped — a deck is copied as a whole directory

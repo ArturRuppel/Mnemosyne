@@ -101,6 +101,33 @@ def test_local_refs_keeps_relative_skips_external():
     ]
 
 
+def test_local_refs_skips_root_relative_server_routes():
+    """Root-relative refs address the server's own routes (the Literature link at
+    /litgraph/, the dynamic /), not files in the data root. They are unbundleable,
+    so they must be dropped rather than resolved against the root — which would
+    both escape it and wrongly report a missing asset."""
+    html = (
+        '<a href="/litgraph/">Literature</a>'
+        '<a href="/">Data Explorer</a>'
+        '<link rel="stylesheet" href="/edit-overlay.css">'
+        '<a href="experiments.html">kept</a>'
+    )
+    assert _local_refs(html) == ["experiments.html"]
+
+
+def test_collect_assets_ignores_root_relative_refs(tmp_path):
+    """End-to-end guard for the above: a page linking /litgraph/ exports cleanly
+    instead of reporting it as a missing asset."""
+    root, dest = tmp_path / "root", tmp_path / "dest"
+    root.mkdir()
+    dest.mkdir()
+    _seen, missing, _total = _collect_assets(
+        [("", '<a href="/litgraph/">Literature</a>')], root, dest, set()
+    )
+    assert missing == []
+    assert not (dest / "litgraph").exists()
+
+
 def test_staticize_drops_auth_and_repoints_graph_link():
     html = (
         '<head>\n    <script src="auth.js"></script>\n</head>\n'
