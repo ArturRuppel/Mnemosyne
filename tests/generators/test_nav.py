@@ -17,7 +17,6 @@ EXPECTED = (
     '        <a href="documents.html">Documents</a>\n'
     '        <a href="presentations.html">Presentations</a>\n'
     '        <a href="posters.html">Posters</a>\n'
-    '        <a href="/litgraph/">Literature</a>\n'
     '    </div>'
 )
 
