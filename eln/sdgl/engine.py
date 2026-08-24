@@ -458,8 +458,62 @@ class SDGL:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_file_locations_node ON file_locations(node_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_file_locations_path ON file_locations(path)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_file_locations_hash ON file_locations(content_hash)")
+        self._migrate_location_keys(cursor)
         conn.commit()
         conn.close()
+
+    @staticmethod
+    def _migrate_location_keys(cursor):
+        """Realign every file_locations id with its (root_name, path) key and
+        make that key unique.
+
+        A location's id is derived from its root name and absolute path, but for
+        a long time nothing re-derived it when those columns changed. Repointing
+        a moved mount rewrites them in place, which is the documented procedure
+        because it preserves the first_seen_at provenance a re-index would
+        reset. The id was left stale by that rewrite, so the next scan computed
+        the correct id, found no row under it, and inserted a duplicate beside
+        the original. ``upsert_location`` now matches on the natural key so this
+        cannot recur, but existing indexes still carry the stale ids and any
+        duplicates already created.
+
+        The unique index is both the fix and the marker that it has been
+        applied, so this returns immediately once it exists.
+        """
+        indexes = {row[1] for row in cursor.execute("PRAGMA index_list(file_locations)")}
+        if "idx_file_locations_root_path" in indexes:
+            return
+
+        # Collapse duplicates before touching ids: two rows for one path would
+        # otherwise be rewritten to the same id and collide on the primary key.
+        # The earliest sighting wins, so first_seen_at survives the repair.
+        cursor.execute(
+            """
+            DELETE FROM file_locations WHERE id IN (
+                SELECT id FROM (
+                    SELECT id, ROW_NUMBER() OVER (
+                        PARTITION BY root_name, path
+                        ORDER BY COALESCE(first_seen_at, '9999') ASC, rowid ASC
+                    ) AS rn
+                    FROM file_locations
+                ) WHERE rn > 1
+            )
+            """
+        )
+
+        rewrites = []
+        for row in cursor.execute("SELECT id, root_name, path FROM file_locations").fetchall():
+            expected = "location:" + stable_hash(
+                row["root_name"] or "", os.path.abspath(row["path"])
+            )
+            if expected != row["id"]:
+                rewrites.append((expected, row["id"]))
+        cursor.executemany("UPDATE file_locations SET id = ? WHERE id = ?", rewrites)
+
+        cursor.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_file_locations_root_path "
+            "ON file_locations(root_name, path)"
+        )
 
     def sync_eln(self):
         if not self.eln_db_path.exists():
@@ -804,12 +858,21 @@ class SDGL:
         When ``hash_path`` is ``None`` any previously stored hash is preserved."""
         owns_conn = conn is None
         conn = conn or self.connect()
-        location_id = "location:" + stable_hash(root_name or "", os.path.abspath(path))
+        abs_path = os.path.abspath(path)
+        location_id = "location:" + stable_hash(root_name or "", abs_path)
         now = utcnow()
         try:
+            # Look the row up by its natural key (root_name, path), not by the
+            # id derived from them. The two can disagree: repointing a moved
+            # mount rewrites root_name/path in place and leaves the derived id
+            # stale, and a lookup by id would then miss the row and insert a
+            # duplicate beside it. Matching on the natural key finds the row
+            # either way, and the UPDATE below rewrites the id so the mismatch
+            # heals instead of accumulating.
             existing = conn.execute(
-                "SELECT content_hash, hashed_size, hashed_mtime, hashed_at "
-                "FROM file_locations WHERE id = ?", (location_id,)
+                "SELECT id, content_hash, hashed_size, hashed_mtime, hashed_at "
+                "FROM file_locations WHERE root_name IS ? AND path = ?",
+                (root_name, abs_path),
             ).fetchone()
             content_hash, hashed_size, hashed_mtime, hashed_at = (
                 self._resolve_content_hash(
@@ -820,16 +883,16 @@ class SDGL:
                 conn.execute(
                     """
                     UPDATE file_locations
-                    SET node_id = ?, role = ?, qualifier = ?, rel_path = ?,
+                    SET id = ?, node_id = ?, role = ?, qualifier = ?, rel_path = ?,
                         size = ?, mtime = ?, is_dir = ?, last_seen_at = ?,
                         exists_now = 1, metadata = ?,
                         content_hash = ?, hashed_size = ?, hashed_mtime = ?,
                         hashed_at = ?
                     WHERE id = ?
                     """,
-                    (node_id, role, qualifier, rel_path, size, mtime, is_dir,
-                     now, json_dumps(metadata), content_hash, hashed_size,
-                     hashed_mtime, hashed_at, location_id),
+                    (location_id, node_id, role, qualifier, rel_path, size, mtime,
+                     is_dir, now, json_dumps(metadata), content_hash, hashed_size,
+                     hashed_mtime, hashed_at, existing["id"]),
                 )
             else:
                 conn.execute(
@@ -841,7 +904,7 @@ class SDGL:
                         content_hash, hashed_size, hashed_mtime, hashed_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)
                     """,
-                    (location_id, node_id, root_name, os.path.abspath(path), role,
+                    (location_id, node_id, root_name, abs_path, role,
                      qualifier, rel_path, size, mtime, is_dir, now, now,
                      json_dumps(metadata), content_hash, hashed_size,
                      hashed_mtime, hashed_at),

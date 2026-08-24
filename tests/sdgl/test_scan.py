@@ -331,3 +331,84 @@ def test_sync_reports_renamed_file_does_not_duplicate_node(data_root):
     paths = [r[0] for r in conn.execute("SELECT file_path FROM reports")]
     conn.close()
     assert paths == ["reports/COV2D/COV2D.md"]
+
+
+def test_rescan_after_in_place_repoint_does_not_duplicate(data_root):
+    """Rewriting root_name/path in place must not make the next scan duplicate
+    every row.
+
+    A location's id is derived from its root name and absolute path. Repointing
+    a moved mount rewrites those columns in place — the documented procedure,
+    because re-indexing would reset the first_seen_at provenance — and used to
+    leave the derived id stale. A lookup keyed on the id then missed the row and
+    inserted a second one beside it, silently doubling the index on every scan.
+    """
+    root, _, _ = data_root
+    SDGL(root).scan_from_config()
+
+    sdgl = SDGL(root)
+    conn = sdgl.connect()
+    before = conn.execute("SELECT COUNT(*) FROM file_locations").fetchone()[0]
+    seen = conn.execute(
+        "SELECT first_seen_at FROM file_locations ORDER BY path LIMIT 1"
+    ).fetchone()[0]
+    # Simulate the in-place repoint: the key material changes, the id does not.
+    conn.execute("UPDATE file_locations SET id = 'location:stale' || rowid")
+    conn.commit()
+    conn.close()
+
+    SDGL(root).scan_from_config()
+
+    conn = SDGL(root).connect()
+    after = conn.execute("SELECT COUNT(*) FROM file_locations").fetchone()[0]
+    distinct = conn.execute(
+        "SELECT COUNT(*) FROM (SELECT DISTINCT root_name, path FROM file_locations)"
+    ).fetchone()[0]
+    stale = conn.execute(
+        "SELECT COUNT(*) FROM file_locations WHERE id LIKE 'location:stale%'"
+    ).fetchone()[0]
+    still_seen = conn.execute(
+        "SELECT first_seen_at FROM file_locations ORDER BY path LIMIT 1"
+    ).fetchone()[0]
+    conn.close()
+
+    assert after == before      # rows updated in place, not inserted beside
+    assert after == distinct    # one row per (root_name, path)
+    assert stale == 0           # every stale id realigned with its key
+    assert still_seen == seen   # provenance untouched by the repair
+
+
+def test_migration_collapses_existing_duplicates(data_root):
+    """An index that already carries duplicates is repaired on next open, and
+    the surviving row is the earliest sighting."""
+    root, _, _ = data_root
+    SDGL(root).scan_from_config()
+
+    conn = SDGL(root).connect()
+    row = conn.execute(
+        "SELECT root_name, path, node_id FROM file_locations ORDER BY path LIMIT 1"
+    ).fetchone()
+    # Drop the constraint (and the marker that the repair already ran) so a
+    # pre-migration index carrying duplicates can be reconstructed.
+    conn.execute("DROP INDEX IF EXISTS idx_file_locations_root_path")
+    conn.execute(
+        "INSERT INTO file_locations (id, node_id, root_name, path, role, "
+        "first_seen_at, last_seen_at, exists_now) "
+        "VALUES ('location:dupe', ?, ?, ?, 'file', '2099-01-01T00:00:00Z', "
+        "'2099-01-01T00:00:00Z', 1)",
+        (row["node_id"], row["root_name"], row["path"]),
+    )
+    conn.commit()
+    conn.close()
+
+    sdgl = SDGL(root)
+    sdgl.initialize()
+
+    conn = sdgl.connect()
+    survivors = conn.execute(
+        "SELECT id, first_seen_at FROM file_locations WHERE path = ?", (row["path"],)
+    ).fetchall()
+    conn.close()
+
+    assert len(survivors) == 1
+    assert survivors[0]["first_seen_at"] != "2099-01-01T00:00:00Z"  # kept the earlier one
