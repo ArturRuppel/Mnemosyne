@@ -29,8 +29,24 @@ def markdown_to_html(text):
     text = re.sub(r'^## (.+)$', r'<h2>\1</h2>', text, flags=re.MULTILINE)
     text = re.sub(r'^# (.+)$', r'<h1>\1</h1>', text, flags=re.MULTILINE)
 
+    # Links: [label](url). Before bold/italic, so an emphasized label still
+    # works, and only http(s)/mailto/relative targets are linked — the input is
+    # curator-authored, but an href is the one place a typo becomes a script.
+    text = re.sub(
+        r'\[([^\]\n]+)\]\((https?://[^\s)]+|mailto:[^\s)]+|[^\s):]+)\)',
+        r'<a href="\2">\1</a>',
+        text,
+    )
+
     # Bold
     text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+
+    # Italic. After bold, so the remaining single asterisks are emphasis. The
+    # span may wrap across lines (footnotes under a table routinely do), but
+    # never across a blank line, or an unpaired asterisk swallows the document.
+    text = re.sub(r'(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)',
+                  lambda m: f'<em>{m.group(1)}</em>' if '\n\n' not in m.group(1) else m.group(0),
+                  text)
 
     # Lists
     text = re.sub(r'^\- (.+)$', r'<li>\1</li>', text, flags=re.MULTILINE)
