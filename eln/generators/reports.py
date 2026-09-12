@@ -47,6 +47,7 @@ def markdown_to_html(text):
     # a literal dollar as \$.
     math = []
     embeds = []
+    tables = []
 
     def _stash(m):
         math.append(m.group(0))
@@ -105,6 +106,30 @@ def markdown_to_html(text):
     # Code blocks
     text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
 
+    # GitHub-style pipe tables. Convert after inline formatting but protect the
+    # resulting HTML from paragraph wrapping. A scroll container keeps genuinely
+    # wide tables usable on narrow screens.
+    def _table(m):
+        lines = [line.strip() for line in m.group(0).strip().splitlines()]
+        rows = [[cell.strip() for cell in line.strip('|').split('|')] for line in lines]
+        if len(rows) < 2 or not all(
+            re.fullmatch(r':?-{3,}:?', cell.replace(' ', '')) for cell in rows[1]
+        ):
+            return m.group(0)
+        width = len(rows[0])
+        body = [row for row in rows[2:] if len(row) == width]
+        head = ''.join(f'<th>{cell}</th>' for cell in rows[0])
+        body_html = ''.join(
+            '<tr>' + ''.join(f'<td>{cell}</td>' for cell in row) + '</tr>'
+            for row in body
+        )
+        table = (f'<div class="table-scroll"><table><thead><tr>{head}</tr></thead>'
+                 f'<tbody>{body_html}</tbody></table></div>')
+        tables.append(table)
+        return f'\x00TABLE{len(tables) - 1}\x00'
+
+    text = re.sub(r'(?:^\|.*\|\s*$\n?){2,}', _table, text, flags=re.MULTILINE)
+
     # Paragraphs
     text = re.sub(r'\n\n+', '</p><p>', text)
     text = '<p>' + text + '</p>'
@@ -130,6 +155,10 @@ def markdown_to_html(text):
             '</iframe>'
         )
         text = text.replace(f'<p>{token}</p>', frame).replace(token, frame)
+
+    for i, table in enumerate(tables):
+        token = f'\x00TABLE{i}\x00'
+        text = text.replace(f'<p>{token}</p>', table).replace(token, table)
 
     return text
 
@@ -244,6 +273,29 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             height: auto;
             display: block;
             margin: 1rem auto;
+        }}
+        .report-content .table-scroll {{
+            width: 100%;
+            overflow-x: auto;
+            margin: 0.85rem 0 1.1rem;
+            -webkit-overflow-scrolling: touch;
+        }}
+        .report-content table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }}
+        .report-content th {{
+            background: #f3f6f8;
+            color: #43525e;
+            text-align: left;
+            font-weight: 650;
+        }}
+        .report-content th, .report-content td {{
+            padding: 0.48rem 0.6rem;
+            border: 1px solid #dce3e8;
+            vertical-align: top;
         }}
         .report-embed {{
             display: block;
@@ -552,6 +604,40 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             color: #6a7884;
             font-size: 0.85rem;
             margin-top: 2rem;
+        }}
+        @media (max-width: 640px) {{
+            .header {{ padding: 0.8rem 0.9rem; }}
+            .header h1 {{ font-size: 1.25rem; }}
+            .header p {{ margin-left: 0 !important; font-size: 0.9rem; }}
+            .nav {{
+                flex-wrap: nowrap;
+                gap: 0.9rem;
+                padding: 0.65rem 0.9rem;
+                overflow-x: auto;
+                white-space: nowrap;
+            }}
+            .container {{ max-width: none; padding: 0.65rem 0; }}
+            .reports-list {{ gap: 0.65rem; }}
+            .report-card {{ border-left: 0; border-right: 0; border-radius: 0; }}
+            .report-header {{ padding: 0.85rem 0.9rem; gap: 0.6rem; }}
+            .report-title-row {{ font-size: 1rem; gap: 0.35rem; }}
+            .expand-icon {{ margin-right: 0.25rem; }}
+            .report-date {{ display: none; }}
+            .report-details {{ margin: 0; padding: 0 0.9rem 1rem; }}
+            .report-content {{ line-height: 1.65; overflow-wrap: anywhere; }}
+            .report-content h1 {{ font-size: 1.45rem; line-height: 1.2; }}
+            .report-content h2 {{ font-size: 1.25rem; line-height: 1.25; }}
+            .report-content h3 {{ font-size: 1.1rem; }}
+            .report-content ul {{ margin-left: 1.25rem; }}
+            .report-content th, .report-content td {{ padding: 0.4rem 0.45rem; }}
+            .exp-overview {{ margin: 1rem 0; padding: 0.75rem; overflow-x: auto; }}
+            .exp-overview-header {{ display: block; }}
+            .exp-overview-title {{ display: block; margin-top: 0.35rem; }}
+            .report-view-toggle {{ margin-top: 0.75rem; }}
+            .nb-in {{ display: block; }}
+            .nb-prompt {{ display: block; padding: 0 0 0.25rem; }}
+            .nb-outputs {{ margin-left: 0; }}
+            .footer {{ margin-top: 1rem; padding: 1rem; }}
         }}
     </style>
     <script>

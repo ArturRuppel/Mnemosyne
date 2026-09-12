@@ -81,6 +81,16 @@ def test_embedded_videos_loop_after_playback_starts():
     assert '<source src="movie.mp4" type="video/mp4">' in html
 
 
+def test_markdown_pipe_table_renders_as_compact_html_table():
+    html = markdown_to_html(
+        "| Parameter | Value |\n| --- | ---: |\n| Cell number | $N=40$ |\n"
+    )
+    assert '<div class="table-scroll"><table>' in html
+    assert '<th>Parameter</th><th>Value</th>' in html
+    assert '<td>Cell number</td>' in html
+    assert '| --- |' not in html
+
+
 def test_same_origin_interactive_embed_is_rendered_but_raw_html_is_escaped():
     html = markdown_to_html("{{embed:reports/MAVIH/explorer/index.html}}")
     assert '<iframe class="report-embed"' in html
