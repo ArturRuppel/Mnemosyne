@@ -154,6 +154,31 @@ def test_generate_renders_notebook_report(tmp_path):
     assert "COV2D" in text                            # series-linked title
 
 
+def test_opt_in_notebook_outputs_render_in_report_cell_order(tmp_path):
+    from eln.generators.reports import generate_reports
+    _make_db_with_codes(tmp_path / "experiments.db", ["COV2D"])
+    path = tmp_path / "reports" / "cov2d" / "report.ipynb"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_json.dumps({
+        "cells": [
+            {"cell_type": "markdown", "source": ["# COV2D\n", "**Series:** COV2D\n", "Before.\n"]},
+            {"cell_type": "code", "execution_count": 1, "source": ["display(panel)\n"],
+             "outputs": [{"output_type": "display_data", "data": {
+                 "text/html": "<section id='panel'>interactive</section>",
+                 "text/plain": ["panel"]}, "metadata": {}}]},
+            {"cell_type": "markdown", "source": ["After.\n"]},
+        ],
+        "metadata": {"eln": {"render_outputs_in_report": True}},
+        "nbformat": 4,
+        "nbformat_minor": 5,
+    }))
+    text = generate_reports(tmp_path).read_text()
+    prose = text.split('class="report-code"')[0]
+    assert "Before." in prose and "<section id='panel'>" in prose and "After." in prose
+    assert prose.index("Before.") < prose.index("<section id='panel'>") < prose.index("After.")
+    assert "display(panel)" not in prose
+
+
 def test_report_card_shows_stale_badge(tmp_path):
     from eln.generators.reports import generate_reports
     from eln.hashing import sha256_file
@@ -219,6 +244,20 @@ def test_render_notebook_full_renders_code_and_outputs():
     assert "done" in html                 # stream output
     assert "42" in html                   # execute_result text
     assert "Heading" in html              # markdown cell still rendered
+
+
+def test_render_notebook_full_can_hide_duplicated_rich_output():
+    from eln.generators.reports import render_notebook_full
+    nb = _nb([{
+        "cell_type": "code", "execution_count": 1,
+        "metadata": {"eln": {"hide_output_in_code": True}},
+        "source": ["display(panel)\n"],
+        "outputs": [{"output_type": "display_data", "data": {
+            "text/html": "<section id='unique-panel'>panel</section>"}}],
+    }])
+    html = render_notebook_full(nb, "reports/cov2d")
+    assert "display(panel)" in html
+    assert "unique-panel" not in html
 
 
 def test_render_output_image_and_html():

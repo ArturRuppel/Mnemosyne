@@ -969,6 +969,36 @@ def notebook_markdown(nb):
     return "\n\n".join(parts)
 
 
+def notebook_report_markdown(nb):
+    """Return report prose plus placeholders for selected notebook outputs.
+
+    Notebook reports normally retain the historical prose-only presentation.
+    Setting ``metadata.eln.render_outputs_in_report`` to true makes rich outputs
+    part of the report in cell order while code remains available only in the
+    Code view. The output map is substituted after Markdown rendering so trusted
+    HTML and image outputs are not escaped by the Markdown parser.
+    """
+    show_outputs = bool(
+        ((nb.get("metadata") or {}).get("eln") or {})
+        .get("render_outputs_in_report", False)
+    )
+    parts = []
+    outputs = {}
+    output_index = 0
+    for cell in nb.get("cells", []):
+        if cell.get("cell_type") == "markdown":
+            parts.append(_cell_source(cell))
+        elif cell.get("cell_type") == "code" and show_outputs:
+            rendered = "".join(
+                render_output(out, "") for out in cell.get("outputs", []))
+            if rendered:
+                token = f"{{{{notebook-output:{output_index}}}}}"
+                parts.append(token)
+                outputs[token] = rendered
+                output_index += 1
+    return "\n\n".join(parts), outputs
+
+
 def _rewrite_relative_images(content, report_dir):
     """Rewrite relative markdown image paths to be relative to the catalog dir.
 
@@ -1092,7 +1122,11 @@ def render_notebook_full(nb, report_dir, code_index=None):
             source = _cell_source(cell)
             count = cell.get("execution_count")
             prompt = f"In [{count}]:" if count is not None else "In [ ]:"
-            outputs = "".join(
+            hide_outputs = bool(
+                ((cell.get("metadata") or {}).get("eln") or {})
+                .get("hide_output_in_code", False)
+            )
+            outputs = "" if hide_outputs else "".join(
                 render_output(o, report_dir) for o in cell.get("outputs", []))
             outputs_html = f'<div class="nb-outputs">{outputs}</div>' if outputs else ""
             parts.append(
@@ -1246,9 +1280,10 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
                 except json.JSONDecodeError:
                     print(f"Skipping malformed notebook report: {report_file}")
                     continue
-                content = notebook_markdown(nb)
+                content, report_outputs = notebook_report_markdown(nb)
             else:
                 content = report_file.read_text()
+                report_outputs = {}
 
             # Fix relative image paths to be relative to catalog directory
             report_dir = report_file.parent.relative_to(root)
@@ -1256,6 +1291,9 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
             content = _rewrite_relative_embeds(content, report_dir)
 
             html_content = markdown_to_html(content)
+            for token, rendered in report_outputs.items():
+                html_content = html_content.replace(f"<p>{token}</p>", rendered)
+                html_content = html_content.replace(token, rendered)
 
             # The declared series ('**Series:** CODE') is the single coverage
             # signal, shared by the card title below and the {{experiments}} block.
