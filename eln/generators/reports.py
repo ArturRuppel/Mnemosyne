@@ -38,20 +38,35 @@ def markdown_to_html(text):
     if not text:
         return ""
 
-    # Protect LaTeX math from the markdown passes below ($$...$$ display, $...$
-    # inline). The raw spans are stashed behind NUL-delimited placeholders (which
+    # Protect LaTeX math from the markdown passes below ($$...$$ and \[...\]
+    # display, $...$ and \(...\) inline). The raw spans are stashed behind
+    # NUL-delimited placeholders (which
     # no markdown rule touches), the markdown transforms run, then the spans are
     # restored — with only &<> escaped so the HTML stays valid — for MathJax to
     # typeset client-side. As in Jupyter, $ now delimits math in a report; write
     # a literal dollar as \$.
     math = []
+    embeds = []
 
     def _stash(m):
         math.append(m.group(0))
         return f'\x00MATH{len(math) - 1}\x00'
 
+    text = re.sub(r'(?<!\\)\\\[.+?(?<!\\)\\\]', _stash, text, flags=re.DOTALL)
     text = re.sub(r'(?<!\\)\$\$.+?\$\$', _stash, text, flags=re.DOTALL)
+    text = re.sub(r'(?<!\\)\\\(.+?(?<!\\)\\\)', _stash, text, flags=re.DOTALL)
     text = re.sub(r'(?<![\w\\$])\$(?!\s)[^$\n]+?(?<!\s)\$(?![\w$])', _stash, text)
+
+    # Same-origin interactive documents can be embedded through a narrow
+    # directive. Arbitrary raw HTML remains escaped below.
+    def _stash_embed(m):
+        src = m.group(1)
+        if src.startswith('/') or '..' in Path(src).parts:
+            return m.group(0)
+        embeds.append(src)
+        return f'\x00EMBED{len(embeds) - 1}\x00'
+
+    text = re.sub(r'\{\{embed:([A-Za-z0-9._/-]+\.html)\}\}', _stash_embed, text)
 
     # Escape HTML
     text = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
@@ -60,7 +75,7 @@ def markdown_to_html(text):
     def replace_media(m):
         alt, src = m.group(1), m.group(2)
         if re.search(r'\.(mp4|webm|ogg)$', src, re.IGNORECASE):
-            return f'<video controls style="max-width: 100%; height: auto; margin: 1rem 0;"><source src="{src}" type="video/mp4">{alt}</video>'
+            return f'<video controls loop style="max-width: 100%; height: auto; margin: 1rem 0;"><source src="{src}" type="video/mp4">{alt}</video>'
         return f'<img src="{src}" alt="{alt}" style="max-width: 100%; height: auto; margin: 1rem 0;">'
     text = re.sub(r'!\[([^\]]*)\]\(([^\)]+)\)', replace_media, text)
 
@@ -105,6 +120,16 @@ def markdown_to_html(text):
     for i, raw in enumerate(math):
         esc = raw.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
         text = text.replace(f'\x00MATH{i}\x00', esc)
+
+    for i, src in enumerate(embeds):
+        token = f'\x00EMBED{i}\x00'
+        frame = (
+            f'<iframe class="report-embed" src="{src}" '
+            'title="Interactive report explorer" loading="lazy" '
+            'onload="this.style.height=(this.contentWindow.document.documentElement.scrollHeight+24)+\'px\'">'
+            '</iframe>'
+        )
+        text = text.replace(f'<p>{token}</p>', frame).replace(token, frame)
 
     return text
 
@@ -219,6 +244,14 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             height: auto;
             display: block;
             margin: 1rem auto;
+        }}
+        .report-embed {{
+            display: block;
+            width: 100%;
+            min-height: 900px;
+            border: 0;
+            margin: 1rem 0;
+            background: transparent;
         }}
         .report-card {{
             background: white;
@@ -523,7 +556,10 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
     </style>
     <script>
       window.MathJax = {{
-        tex: {{ inlineMath: [['$', '$']], displayMath: [['$$', '$$']] }},
+        tex: {{
+          inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
+          displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']]
+        }},
         options: {{ skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }}
       }};
     </script>
@@ -947,6 +983,15 @@ def _rewrite_relative_images(content, report_dir):
     )
 
 
+def _rewrite_relative_embeds(content, report_dir):
+    """Resolve report-local interactive embeds from the catalog page."""
+    return re.sub(
+        r'\{\{embed:(?!https?://|/)([A-Za-z0-9._/-]+\.html)\}\}',
+        lambda m: f'{{{{embed:{report_dir}/{m.group(1)}}}}}',
+        content,
+    )
+
+
 _ANSI_RE = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]')
 
 
@@ -1208,6 +1253,7 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
             # Fix relative image paths to be relative to catalog directory
             report_dir = report_file.parent.relative_to(root)
             content = _rewrite_relative_images(content, report_dir)
+            content = _rewrite_relative_embeds(content, report_dir)
 
             html_content = markdown_to_html(content)
 

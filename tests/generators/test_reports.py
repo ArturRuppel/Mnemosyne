@@ -55,7 +55,7 @@ def test_notebook_markdown_source_as_string():
     assert "plain string" in notebook_markdown(nb)
 
 
-from eln.generators.reports import markdown_to_html
+from eln.generators.reports import REPORTS_HTML_TEMPLATE, markdown_to_html
 
 
 def test_headings_get_slug_ids():
@@ -74,6 +74,20 @@ def test_in_page_anchor_link_matches_heading_id():
     assert 'id="contact-type-permutation-null"' in page
 
 
+def test_embedded_videos_loop_after_playback_starts():
+    html = markdown_to_html("![cell migration](movie.mp4)")
+
+    assert '<video controls loop ' in html
+    assert '<source src="movie.mp4" type="video/mp4">' in html
+
+
+def test_same_origin_interactive_embed_is_rendered_but_raw_html_is_escaped():
+    html = markdown_to_html("{{embed:reports/MAVIH/explorer/index.html}}")
+    assert '<iframe class="report-embed"' in html
+    assert 'src="reports/MAVIH/explorer/index.html"' in html
+    assert '<iframe src="evil.html">' not in markdown_to_html('<iframe src="evil.html">')
+
+
 def test_latex_math_survives_markdown_passes():
     # Math is protected from *emphasis* / `code` / HTML-escaping so MathJax can
     # typeset it client-side. The raw LaTeX must come through verbatim.
@@ -83,6 +97,21 @@ def test_latex_math_survives_markdown_passes():
     inline = markdown_to_html(r"chance is $\log_2 1 = 0$ exactly")
     assert r"$\log_2 1 = 0$" in inline
     assert "<em>" not in inline and "<strong>" not in inline
+
+    bracket_display = markdown_to_html(
+        r"take \[E_i=\frac{K_P}{2}(P_i-P_0)^2\] here"
+    )
+    assert r"\[E_i=\frac{K_P}{2}(P_i-P_0)^2\]" in bracket_display
+    assert "<em>" not in bracket_display
+
+    paren_inline = markdown_to_html(r"tension is \(2\tau_i-\gamma\) exactly")
+    assert r"\(2\tau_i-\gamma\)" in paren_inline
+    assert "<em>" not in paren_inline and "<strong>" not in paren_inline
+
+
+def test_mathjax_config_supports_both_latex_delimiter_styles():
+    assert r"['$', '$'], ['\\(', '\\)']" in REPORTS_HTML_TEMPLATE
+    assert r"['$$', '$$'], ['\\[', '\\]']" in REPORTS_HTML_TEMPLATE
 
 
 import json as _json
