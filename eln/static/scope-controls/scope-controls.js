@@ -11,7 +11,7 @@
 // each viewer supplies callbacks that talk to its own renderer, so a
 // server-rendered PNG stack and a Luxar scene share widgets, not a backend.
 
-export const VERSION = "2";
+export const VERSION = "3";
 
 // napari's image-layer blending modes, in napari's menu order.
 export const BLENDINGS = ["translucent", "translucent_no_depth", "additive", "minimum", "opaque"];
@@ -227,7 +227,7 @@ export function axisControl(container, options) {
 //          limits?, gamma?, colormap?, colormaps? }
 // options: { controls, list, layers, selected, colormaps, blendings,
 //            contrastCommit: "input" | "change", autoContrast: "none" | "once" | "both",
-//            onChange(id, patch), onAutoContrast(id) -> [low, high] | Promise }
+//            onChange(id, patch), onSelect(id), onAutoContrast(id) -> [low, high] | Promise }
 // With contrastCommit "change", contrast is committed on release, for
 // renderers where every contrast change costs a server round trip. With
 // autoContrast "both", the host re-runs onAutoContrast for layers where
@@ -297,7 +297,7 @@ export function layerPanel(options) {
         el("span", { class: "sc-layer-text" },
           el("span", { class: "sc-name", text: layer.name }),
           layer.kind ? el("span", { class: "sc-kind", text: layer.kind }) : null));
-      const choose = () => { selected = layer.id; renderList(); renderControls(); };
+      const choose = () => { const changed = selected !== layer.id; selected = layer.id; renderList(); renderControls(); if (changed) opts.onSelect?.(selected); };
       item.addEventListener("click", choose);
       item.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); choose(); } });
       return item;
@@ -410,11 +410,20 @@ export function layerPanel(options) {
     isContinuous: (id) => continuous.has(id),
     autoContrast,
     setLayers(next, keepSelection = true) {
+      const previous = selected;
       layers = next.map((layer) => ({ ...layer }));
       for (const id of [...continuous]) if (!layers.some((layer) => layer.id === id)) continuous.delete(id);
       if (!keepSelection || !layers.some((layer) => layer.id === selected)) selected = layers.at(-1)?.id ?? null;
       renderList();
       renderControls();
+      if (selected !== previous) opts.onSelect?.(selected);
+    },
+    select(id) {
+      if (!layers.some((layer) => layer.id === id) || id === selected) return;
+      selected = id;
+      renderList();
+      renderControls();
+      opts.onSelect?.(selected);
     },
     update(id, patch) {
       const layer = layers.find((item) => item.id === id);
