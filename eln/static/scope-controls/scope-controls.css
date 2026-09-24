@@ -4,6 +4,9 @@
  * unchanged. The palette is the lab book's: navy bar, blue accent. Light is the
  * default; set data-theme="dark" on <html> for the dark variant. Pages may use
  * the --sc-* tokens for their own chrome so everything stays in one palette.
+ *
+ * Selectors carry at least two classes so host-page element rules (input,
+ * label, select, button) never win over them.
  */
 
 :root {
@@ -17,7 +20,7 @@
   --sc-accent-soft: #e5edf4;
   --sc-ground: #eef1f4;
   --sc-surface: #ffffff;
-  --sc-surface-2: #f7f9fb;
+  --sc-surface-2: #f4f6f8;
   --sc-line: #d7dde2;
   --sc-track: #c8d4dd;
   --sc-danger: #b3261e;
@@ -44,75 +47,119 @@
   --sc-shadow: 0 4px 22px rgba(0, 0, 0, .45);
 }
 
-.sc-axis, .sc-layers, .sc-editor { font-family: var(--sc-font); color: var(--sc-ink); }
-.sc-axis *, .sc-layers *, .sc-editor * { box-sizing: border-box; }
-.sc-axis input, .sc-axis button, .sc-layers input, .sc-layers button, .sc-editor input { font: inherit; }
+.sc-dim, .sc-controls, .sc-layers { font-family: var(--sc-font); color: var(--sc-ink); font-size: 13px; }
+.sc-dim *, .sc-controls *, .sc-layers * { box-sizing: border-box; }
+.sc-dim input, .sc-dim button, .sc-controls input, .sc-controls button, .sc-controls select, .sc-layers button { font: inherit; }
 
-.sc-button {
-  min-width: 40px; min-height: 40px; padding: 0 10px;
-  border: 1px solid var(--sc-line); border-radius: var(--sc-radius);
-  color: var(--sc-ink); background: var(--sc-surface-2);
-  font-weight: 700; cursor: pointer; touch-action: manipulation;
+/* Shared widgets */
+.sc-dim .sc-slider, .sc-controls .sc-slider { width: 100%; min-height: 26px; margin: 0; accent-color: var(--sc-accent); }
+.sc-dim .sc-icon, .sc-controls .sc-icon, .sc-buttons .sc-icon {
+  width: 32px; min-width: 32px; height: 32px; min-height: 32px; padding: 0; display: inline-grid; place-items: center;
+  border: 1px solid var(--sc-line); border-radius: 6px; color: var(--sc-ink); background: var(--sc-surface-2);
+  font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer; touch-action: manipulation;
 }
-.sc-button:hover { border-color: var(--sc-accent); }
-.sc-button.sc-primary { color: var(--sc-accent-ink); background: var(--sc-accent); border-color: var(--sc-accent); }
-.sc-button:disabled { opacity: .45; cursor: not-allowed; }
+.sc-dim .sc-icon:hover, .sc-controls .sc-icon:hover, .sc-buttons .sc-icon:hover { border-color: var(--sc-accent); }
+.sc-dim .sc-play[aria-pressed="true"] { color: var(--sc-accent-ink); background: var(--sc-accent); border-color: var(--sc-accent); }
+.sc-controls .sc-select {
+  width: 100%; min-height: 30px; padding: 3px 6px; border: 1px solid var(--sc-line); border-radius: 6px;
+  color: var(--sc-ink); background: var(--sc-surface);
+}
+.sc-controls .sc-value { min-width: 3.2em; text-align: right; color: var(--sc-muted); font-variant-numeric: tabular-nums; }
 
-.sc-slider { width: 100%; min-height: 28px; margin: 0; accent-color: var(--sc-accent); }
-
-/* Axis */
-.sc-axis { display: grid; gap: 6px; }
-.sc-axis[data-single] { opacity: .55; }
-.sc-axis-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: .8rem; }
-.sc-readout { display: inline-flex; align-items: baseline; gap: 2px; font-variant-numeric: tabular-nums; color: var(--sc-muted); }
-/* Selectors below carry two classes so host-page element rules (input, label) never win. */
-.sc-axis .sc-index {
-  width: 4.2em; min-height: 28px; padding: 2px 4px; text-align: right;
+/* Dims: one row per slider, napari style */
+.sc-dim { display: grid; grid-template-columns: 32px auto 32px minmax(60px, 1fr) 32px auto; gap: 6px; align-items: center; }
+.sc-dim[data-single] { opacity: .5; }
+.sc-dim .sc-icon-spacer { width: 32px; }
+.sc-dim .sc-dim-name { min-width: 1.4em; color: var(--sc-muted); font-weight: 700; text-align: center; }
+.sc-dim .sc-step { width: 28px; min-width: 28px; font-size: 18px; }
+.sc-dim .sc-readout { display: inline-flex; align-items: baseline; gap: 4px; color: var(--sc-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sc-dim .sc-index {
+  width: 3.6em; min-height: 28px; padding: 2px 4px; margin: 0; text-align: right;
   border: 1px solid transparent; border-radius: 6px; background: transparent;
   color: var(--sc-ink); font-weight: 700; -moz-appearance: textfield;
 }
-.sc-axis .sc-index::-webkit-inner-spin-button, .sc-axis .sc-index::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.sc-axis .sc-index:hover, .sc-axis .sc-index:focus { border-color: var(--sc-line); background: var(--sc-surface); }
-.sc-physical:not(:empty) { margin-left: 8px; }
-.sc-axis-row { display: grid; grid-template-columns: 40px 40px minmax(80px, 1fr); gap: 6px; align-items: center; }
-.sc-axis-playable .sc-axis-row { grid-template-columns: 40px 40px 40px minmax(80px, 1fr); }
-.sc-axis .sc-slider { min-height: 40px; }
+.sc-dim .sc-index::-webkit-inner-spin-button, .sc-dim .sc-index::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.sc-dim .sc-index:hover, .sc-dim .sc-index:focus { border-color: var(--sc-line); background: var(--sc-surface); }
+.sc-dim .sc-physical { min-width: 5.5em; }
+.sc-dim .sc-physical:empty { min-width: 0; }
 
-/* Layers */
-.sc-layers { display: grid; gap: 5px; }
-.sc-layer {
-  min-height: 48px; display: flex; align-items: stretch; overflow: hidden;
-  border: 1px solid transparent; border-radius: var(--sc-radius); background: var(--sc-surface-2);
-}
-.sc-layer[data-selected="true"] { border-color: var(--sc-accent); background: var(--sc-accent-soft); }
-.sc-visibility { width: 40px; flex: none; display: grid; place-items: center; border-right: 1px solid var(--sc-line); cursor: pointer; }
-.sc-visibility input { width: 20px; height: 20px; accent-color: var(--sc-accent); }
-.sc-swatch { width: 34px; flex: none; align-self: center; height: 28px; margin-left: 6px; padding: 2px; border: 0; background: none; cursor: pointer; }
-.sc-layer-name { flex: 1; min-width: 0; padding: 6px 9px; border: 0; background: transparent; color: var(--sc-ink); text-align: left; cursor: pointer; }
-.sc-name, .sc-kind { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sc-name { font-size: .82rem; font-weight: 700; }
-.sc-kind { margin-top: 2px; color: var(--sc-muted); font-size: .67rem; letter-spacing: .07em; text-transform: uppercase; }
+/* Layer controls: napari's "label: widget" form */
+.sc-controls { display: grid; gap: 7px; }
+.sc-controls[data-empty] .sc-row { opacity: .45; pointer-events: none; }
+.sc-controls .sc-controls-title { overflow: hidden; padding-bottom: 5px; border-bottom: 1px solid var(--sc-line); font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.sc-controls .sc-row { display: grid; grid-template-columns: 104px 1fr; gap: 8px; align-items: center; margin: 0; }
+.sc-controls .sc-row[hidden] { display: none; }
+.sc-controls .sc-row-label { color: var(--sc-muted); font-size: 12px; text-align: right; }
+.sc-controls .sc-row-widget { min-width: 0; display: grid; gap: 3px; }
+.sc-controls .sc-inline { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.sc-controls .sc-limits-text { color: var(--sc-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.sc-controls .sc-colormap-swatch { width: 44px; height: 18px; flex: none; border: 1px solid var(--sc-line); border-radius: 3px; }
 
-/* Selected-layer editor */
-.sc-editor { display: grid; gap: 13px; padding: 10px 2px; }
-.sc-editor[data-empty] { opacity: .5; pointer-events: none; }
-.sc-editor .sc-control { display: grid; gap: 5px; margin: 0; color: var(--sc-ink); }
-.sc-editor .sc-control[hidden] { display: none; }
-.sc-control-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: .75rem; font-weight: 700; }
-.sc-value { color: var(--sc-muted); font-variant-numeric: tabular-nums; font-weight: 600; }
-.sc-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-.sc-editor .sc-number { margin: 0; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 5px; color: var(--sc-muted); font-size: .68rem; font-weight: 600; }
-.sc-editor .sc-number input {
-  width: 100%; min-height: 34px; padding: 4px 6px;
-  border: 1px solid var(--sc-line); border-radius: 6px; color: var(--sc-ink); background: var(--sc-surface);
+/* Dual-thumb contrast slider: two overlaid ranges, only their thumbs take input */
+.sc-controls .sc-range { position: relative; flex: 1; height: 26px; min-width: 0; }
+.sc-controls .sc-range::before { content: ""; position: absolute; left: 0; right: 0; top: 11px; height: 4px; border-radius: 2px; background: var(--sc-track); }
+.sc-controls .sc-range-fill { position: absolute; top: 11px; height: 4px; border-radius: 2px; background: var(--sc-accent); }
+.sc-controls .sc-range .sc-slider {
+  position: absolute; inset: 0; height: 26px; min-height: 0; margin: 0; background: none;
+  pointer-events: none; -webkit-appearance: none; appearance: none;
 }
+.sc-controls .sc-range .sc-slider::-webkit-slider-runnable-track { height: 26px; background: none; }
+.sc-controls .sc-range .sc-slider::-moz-range-track { background: none; }
+.sc-controls .sc-range .sc-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; margin-top: 5px; border: 2px solid var(--sc-surface);
+  border-radius: 50%; background: var(--sc-accent); box-shadow: 0 0 0 1px var(--sc-accent); pointer-events: auto; cursor: pointer;
+}
+.sc-controls .sc-range .sc-slider::-moz-range-thumb {
+  width: 12px; height: 12px; border: 2px solid var(--sc-surface); border-radius: 50%;
+  background: var(--sc-accent); box-shadow: 0 0 0 1px var(--sc-accent); pointer-events: auto; cursor: pointer;
+}
+.sc-controls .sc-more { width: 26px; min-width: 26px; height: 26px; min-height: 26px; }
+.sc-controls .sc-exact { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sc-controls .sc-exact[hidden] { display: none; }
+.sc-controls .sc-exact label { display: grid; grid-template-columns: auto 1fr; gap: 4px; align-items: center; margin: 0; color: var(--sc-muted); font-size: 11px; font-weight: 600; }
+.sc-controls .sc-exact input {
+  width: 100%; min-height: 28px; padding: 2px 5px; border: 1px solid var(--sc-line); border-radius: 5px;
+  color: var(--sc-ink); background: var(--sc-surface);
+}
+.sc-controls .sc-chips { display: flex; gap: 6px; }
+.sc-controls .sc-chip {
+  min-height: 26px; padding: 2px 10px; border: 1px solid var(--sc-line); border-radius: 999px;
+  color: var(--sc-ink); background: var(--sc-surface-2); font-size: 12px; cursor: pointer;
+}
+.sc-controls .sc-chip:hover { border-color: var(--sc-accent); }
+.sc-controls .sc-chip[aria-pressed="true"] { color: var(--sc-accent-ink); background: var(--sc-accent); border-color: var(--sc-accent); }
+
+/* Layer list: eye, thumbnail, name; top row is drawn last */
+.sc-layers { display: grid; gap: 3px; }
+.sc-layers .sc-layer {
+  min-height: 40px; display: flex; align-items: center; gap: 7px; padding: 3px 6px 3px 3px;
+  border: 1px solid transparent; border-radius: 6px; background: var(--sc-surface-2); cursor: pointer;
+}
+.sc-layers .sc-layer[data-selected="true"] { border-color: var(--sc-accent); background: var(--sc-accent-soft); }
+.sc-layers .sc-layer:focus-visible { outline: 2px solid var(--sc-accent); outline-offset: 1px; }
+.sc-layers .sc-eye {
+  width: 32px; height: 32px; min-height: 32px; flex: none; padding: 5px; display: grid; place-items: center;
+  border: 0; border-radius: 5px; color: var(--sc-ink); background: transparent; cursor: pointer;
+}
+.sc-layers .sc-eye svg { width: 20px; height: 20px; fill: currentColor; }
+.sc-layers .sc-eye[aria-pressed="false"] { color: var(--sc-muted); opacity: .35; }
+.sc-layers .sc-thumb { width: 28px; height: 28px; flex: none; border: 1px solid var(--sc-line); border-radius: 4px; }
+.sc-layers .sc-layer[data-hidden="true"] .sc-thumb, .sc-layers .sc-layer[data-hidden="true"] .sc-layer-text { opacity: .5; }
+.sc-layers .sc-layer-text { min-width: 0; }
+.sc-layers .sc-name, .sc-layers .sc-kind { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-layers .sc-name { font-size: 13px; font-weight: 650; }
+.sc-layers .sc-kind { color: var(--sc-muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
 
 @media (max-width: 480px) {
-  .sc-layer { min-height: 56px; }
-  .sc-visibility { width: 48px; }
-  .sc-visibility input { width: 24px; height: 24px; }
-  .sc-editor .sc-number input, .sc-axis .sc-index { min-height: 42px; font-size: 16px; }
-  .sc-axis-row { grid-template-columns: 44px 44px 1fr; }
-  .sc-axis-playable .sc-axis-row { grid-template-columns: 44px 44px 44px 1fr; }
-  .sc-button { min-width: 44px; min-height: 44px; }
+  .sc-dim { grid-template-columns: 40px auto 36px minmax(40px, 1fr) 36px; }
+  .sc-dim .sc-readout { grid-column: 2 / -1; justify-content: flex-end; }
+  .sc-dim .sc-icon { width: 40px; height: 40px; }
+  .sc-dim .sc-step { width: 36px; min-width: 36px; }
+  .sc-layers .sc-layer { min-height: 48px; }
+  .sc-controls .sc-row { grid-template-columns: 88px 1fr; }
+  .sc-controls .sc-exact input, .sc-dim .sc-index { min-height: 40px; font-size: 16px; }
 }
+
+/* Viewer buttons (napari's row under the layer list); hosts add class sc-buttons */
+.sc-buttons { display: flex; gap: 6px; font-family: var(--sc-font); }
+.sc-buttons .sc-icon.sc-wide { width: auto; padding: 0 10px; font-size: 13px; font-weight: 650; }

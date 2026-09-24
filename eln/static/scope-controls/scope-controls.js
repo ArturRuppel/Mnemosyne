@@ -1,14 +1,56 @@
-// scope-controls — shared layer and axis controls for microscopy viewers.
+// scope-controls — shared layer and dims controls for microscopy viewers.
 //
 // Canonical copy: electronic_labbook/eln/static/scope-controls/. Viewers that
 // use it (lab-book explorers, Cellpose Web) vendor this file and
 // scope-controls.css unchanged; edit here and copy out.
 //
-// The module draws controls only. Each viewer supplies callbacks that talk to
-// its own renderer, so a server-rendered PNG stack and a Luxar scene share the
-// same widgets without sharing a backend.
+// The layout follows napari: a layer-controls form for the selected layer
+// (opacity, blending, contrast limits, auto-contrast, gamma, colormap) above a
+// layer list whose top row is the layer drawn last, and one slider row per
+// non-displayed dimension below the canvas. The module draws controls only;
+// each viewer supplies callbacks that talk to its own renderer, so a
+// server-rendered PNG stack and a Luxar scene share widgets, not a backend.
 
-export const VERSION = "1";
+export const VERSION = "2";
+
+// napari's image-layer blending modes, in napari's menu order.
+export const BLENDINGS = ["translucent", "translucent_no_depth", "additive", "minimum", "opaque"];
+
+// Single-hue ramps first, as in napari's colormap menu.
+export const COLORMAPS = {
+  gray: ["#000", "#fff"], red: ["#000", "#f00"], green: ["#000", "#0f0"], blue: ["#000", "#00f"],
+  cyan: ["#000", "#0ff"], magenta: ["#000", "#f0f"], yellow: ["#000", "#ff0"], orange: ["#000", "#ff8000"],
+  bop_blue: ["#000", "#0082ff"], bop_orange: ["#000", "#ff8c00"], bop_purple: ["#000", "#b43cff"],
+  viridis: ["#440154", "#3b528b", "#21918c", "#5ec962", "#fde725"],
+  inferno: ["#000004", "#57106e", "#bc3754", "#f98e09", "#fcffa4"],
+  magma: ["#000004", "#51127c", "#b73779", "#fc8961", "#fcfdbf"],
+  plasma: ["#0d0887", "#7e03a8", "#cc4778", "#f89540", "#f0f921"],
+  turbo: ["#30123b", "#4686fb", "#1ae4b6", "#a2fc3c", "#fabe39", "#e3440a", "#7a0403"],
+  fire: ["#000", "#b40000", "#ff8000", "#ffff80", "#fff"],
+  ice: ["#000", "#00306e", "#0080c0", "#80e0ff", "#fff"],
+  phase: ["#a8780d", "#6a8b12", "#0f8f8c", "#5b6fd5", "#b653a8", "#a8780d"],
+  RdBu: ["#67001f", "#d6604d", "#f7f7f7", "#4393c3", "#053061"],
+  coolwarm: ["#3b4cc0", "#aac7fd", "#dddddd", "#f7b89c", "#b40426"],
+};
+
+export function colormapGradient(name, direction = "to right") {
+  const stops = COLORMAPS[name] || COLORMAPS.gray;
+  return `linear-gradient(${direction}, ${stops.join(", ")})`;
+}
+
+// 256-entry RGB lookup table for a colormap, for renderers that tint on the CPU.
+export function colormapLut(name) {
+  const stops = (COLORMAPS[name] || COLORMAPS.gray).map((hex) => {
+    const h = hex.length === 4 ? hex.slice(1).split("").map((c) => c + c).join("") : hex.slice(1);
+    return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  });
+  const lut = new Uint8ClampedArray(256 * 3);
+  for (let i = 0; i < 256; i += 1) {
+    const x = (i / 255) * (stops.length - 1), k = Math.min(stops.length - 2, Math.floor(x)), f = x - k;
+    for (let c = 0; c < 3; c += 1) lut[i * 3 + c] = stops[k][c] + (stops[k + 1][c] - stops[k][c]) * f;
+  }
+  return lut;
+}
 
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
@@ -24,16 +66,14 @@ function el(tag, attrs = {}, ...children) {
 }
 
 const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
-
-function digitsFor(span) {
-  return span <= 2 ? 2 : span <= 20 ? 1 : 0;
-}
+const digitsFor = (span) => (span <= 2 ? 2 : span <= 20 ? 1 : 0);
+const EYE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/></svg>';
 
 // Format an elapsed quantity in the axis unit: 735 minute -> "12 h 15 min".
+// `step` is the axis spacing, so frame 0 of a 15-min series reads "0 min".
 export function formatElapsed(value, unit, step = null) {
   if (!unit) return "";
-  const u = unit.toLowerCase();
-  const seconds = { second: 1, s: 1, sec: 1, minute: 60, min: 60, hour: 3600, h: 3600 }[u];
+  const seconds = { second: 1, s: 1, sec: 1, minute: 60, min: 60, hour: 3600, h: 3600 }[unit.toLowerCase()];
   if (seconds === undefined) return `${+value.toFixed(3)} ${unit}`;
   const total = Math.round(value * seconds);
   if (total === 0) return (step ?? 1) * seconds >= 60 ? "0 min" : "0 s";
@@ -45,42 +85,42 @@ export function formatElapsed(value, unit, step = null) {
 
 function formatSpatial(value, unit) {
   if (!unit) return "";
-  const short = { micrometer: "µm", nanometer: "nm", millimeter: "mm" }[unit.toLowerCase()] || unit;
+  const short = { micrometer: "µm", nanometer: "nm", millimeter: "mm", um: "µm" }[unit.toLowerCase()] || unit;
   return `${+value.toFixed(2)} ${short}`;
 }
 
-// A stepped axis (time or Z): −/+ buttons, slider, editable index, and an
-// elapsed or physical readout. With `playable`, a play button loops the axis;
-// it waits for a promise returned by onChange before scheduling the next step,
-// so slow renderers are never outrun.
+// One napari dims row: play, axis name, slider (with step buttons for touch),
+// and "index / last" with the elapsed or physical position. Playback waits for
+// a promise returned by onChange before scheduling the next step, so slow
+// renderers are never outrun.
 //
-// options: { label, count, value, spacing, unit, playable, playDelay, onChange }
+// options: { label, name, count, value, spacing, unit, playable, playDelay, onChange }
 export function axisControl(container, options) {
-  const opts = { value: 0, spacing: null, unit: null, playable: false, playDelay: 450, ...options };
+  const opts = { value: 0, spacing: null, unit: null, playable: true, playDelay: 450, ...options };
   let count = opts.count, value = opts.value, playing = false, timer = null, token = 0;
-  const isTime = /^t/i.test(opts.label);
+  const isTime = /^t/i.test(opts.name || opts.label);
 
   const slider = el("input", { class: "sc-slider", type: "range", min: 0, step: 1, "aria-label": opts.label });
   const index = el("input", { class: "sc-index", type: "number", min: 0, step: 1, inputmode: "numeric", "aria-label": `${opts.label} index` });
   const last = el("span", { class: "sc-last" });
   const physical = el("span", { class: "sc-physical" });
   const play = opts.playable
-    ? el("button", { class: "sc-button sc-primary sc-play", type: "button", "aria-label": "Play", "aria-pressed": "false", text: "▶" })
-    : null;
-  const prev = el("button", { class: "sc-button", type: "button", "aria-label": `Previous ${opts.label}`, text: "−" });
-  const next = el("button", { class: "sc-button", type: "button", "aria-label": `Next ${opts.label}`, text: "+" });
+    ? el("button", { class: "sc-icon sc-play", type: "button", "aria-label": `Play ${opts.label}`, "aria-pressed": "false", text: "▶" })
+    : el("span", { class: "sc-icon-spacer" });
+  const prev = el("button", { class: "sc-icon sc-step", type: "button", "aria-label": `Previous ${opts.label}`, text: "‹" });
+  const next = el("button", { class: "sc-icon sc-step", type: "button", "aria-label": `Next ${opts.label}`, text: "›" });
 
-  const root = el("section", { class: `sc-axis${play ? " sc-axis-playable" : ""}`, "aria-label": opts.label },
-    el("div", { class: "sc-axis-head" },
-      el("strong", { text: opts.label }),
-      el("span", { class: "sc-readout" }, index, last, physical)),
-    el("div", { class: "sc-axis-row" }, prev, play, next, slider));
+  const root = el("div", { class: "sc-dim", role: "group", "aria-label": opts.label },
+    play,
+    el("span", { class: "sc-dim-name", title: opts.label, text: opts.name || opts.label }),
+    prev, slider, next,
+    el("span", { class: "sc-readout" }, index, last, physical));
   container.append(root);
 
   function render() {
     slider.max = index.max = String(Math.max(0, count - 1));
     slider.value = index.value = String(value);
-    last.textContent = ` / ${Math.max(0, count - 1)}`;
+    last.textContent = `/ ${Math.max(0, count - 1)}`;
     const amount = opts.spacing ? value * opts.spacing : null;
     physical.textContent = amount === null ? "" : isTime ? formatElapsed(amount, opts.unit, opts.spacing) : formatSpatial(amount, opts.unit);
     root.toggleAttribute("data-single", count <= 1);
@@ -95,14 +135,14 @@ export function axisControl(container, options) {
   }
 
   function setPlaying(on) {
-    if (!play) return;
-    playing = on;
+    if (!opts.playable) return;
+    playing = on && count > 1;
     token += 1;
     window.clearTimeout(timer);
-    play.textContent = on ? "❚❚" : "▶";
-    play.setAttribute("aria-label", on ? "Pause" : "Play");
-    play.setAttribute("aria-pressed", String(on));
-    if (on) step(token);
+    play.textContent = playing ? "❚❚" : "▶";
+    play.setAttribute("aria-label", `${playing ? "Pause" : "Play"} ${opts.label}`);
+    play.setAttribute("aria-pressed", String(playing));
+    if (playing) step(token);
   }
 
   async function step(mine) {
@@ -115,7 +155,7 @@ export function axisControl(container, options) {
   index.addEventListener("change", () => set(index.value));
   prev.addEventListener("click", () => set(value - 1));
   next.addEventListener("click", () => set(value + 1));
-  play?.addEventListener("click", () => setPlaying(!playing));
+  if (opts.playable) play.addEventListener("click", () => setPlaying(!playing));
   document.addEventListener("visibilitychange", () => { if (document.hidden) setPlaying(false); });
   render();
 
@@ -124,10 +164,10 @@ export function axisControl(container, options) {
     get playing() { return playing; },
     set,
     setPlaying,
-    configure(next) {
-      Object.assign(opts, next);
-      if (next.count !== undefined) count = next.count;
-      if (next.value !== undefined) value = next.value;
+    configure(changes) {
+      Object.assign(opts, changes);
+      if (changes.count !== undefined) count = changes.count;
+      if (changes.value !== undefined) value = changes.value;
       value = clamp(value, 0, Math.max(0, count - 1));
       render();
     },
@@ -135,42 +175,60 @@ export function axisControl(container, options) {
   };
 }
 
-// A napari-style layer list: one row per layer (visibility, optional colour,
-// name, kind) and an editor for the selected layer (contrast limits, gamma,
-// opacity). Fields a layer lacks are hidden, so renderers opt in per feature.
+// napari's layer dock: `controls` gets the form for the selected layer and
+// `list` the layer list (top row = drawn last). Rows a layer does not define
+// are hidden, so each renderer opts in per feature.
 //
-// layer: { id, name, kind, visible, color?, dataRange?, limits?, gamma?, opacity? }
-// options: { layers, selected, contrastCommit: "input" | "change", onChange(id, patch) }
+// layer: { id, name, kind, visible, opacity?, blending?, blendings?, dataRange?,
+//          limits?, gamma?, colormap?, colormaps? }
+// options: { controls, list, layers, selected, colormaps, blendings,
+//            contrastCommit: "input" | "change", autoContrast: "none" | "once" | "both",
+//            onChange(id, patch), onAutoContrast(id) -> [low, high] | Promise }
 // With contrastCommit "change", contrast is committed on release, for
-// renderers where every contrast change costs a server round trip.
-export function layerList(container, options) {
-  const opts = { contrastCommit: "input", ...options };
+// renderers where every contrast change costs a server round trip. With
+// autoContrast "both", the host re-runs onAutoContrast for layers where
+// isContinuous(id) is true whenever the displayed slice changes.
+export function layerPanel(options) {
+  const opts = { contrastCommit: "input", autoContrast: "none", colormaps: Object.keys(COLORMAPS), blendings: BLENDINGS, ...options };
   let layers = (opts.layers || []).map((layer) => ({ ...layer }));
-  let selected = opts.selected ?? layers[0]?.id ?? null;
+  let selected = opts.selected ?? layers.at(-1)?.id ?? null;
+  const continuous = new Set();
 
-  const list = el("div", { class: "sc-layers", role: "listbox", "aria-label": "Layers" });
-  const lowSlider = el("input", { class: "sc-slider", type: "range", "aria-label": "Contrast minimum" });
-  const highSlider = el("input", { class: "sc-slider", type: "range", "aria-label": "Contrast maximum" });
+  const opacity = el("input", { class: "sc-slider", type: "range", min: 0, max: 1, step: 0.01, "aria-label": "Opacity" });
+  const opacityValue = el("span", { class: "sc-value" });
+  const blending = el("select", { class: "sc-select", "aria-label": "Blending" });
+  const lowSlider = el("input", { class: "sc-slider sc-range-low", type: "range", "aria-label": "Contrast minimum" });
+  const highSlider = el("input", { class: "sc-slider sc-range-high", type: "range", "aria-label": "Contrast maximum" });
+  const rangeFill = el("span", { class: "sc-range-fill" });
   const lowNumber = el("input", { type: "number", inputmode: "decimal", "aria-label": "Contrast minimum value" });
   const highNumber = el("input", { type: "number", inputmode: "decimal", "aria-label": "Contrast maximum value" });
-  const gamma = el("input", { class: "sc-slider", type: "range", min: 0.1, max: 3, step: 0.05, "aria-label": "Gamma" });
-  const opacity = el("input", { class: "sc-slider", type: "range", min: 0, max: 1, step: 0.01, "aria-label": "Opacity" });
-  const contrastValue = el("span", { class: "sc-value" });
+  const limitsText = el("span", { class: "sc-value" });
+  const more = el("button", { class: "sc-icon sc-more", type: "button", "aria-label": "Edit contrast limits", "aria-expanded": "false", text: "⋯" });
+  const exact = el("div", { class: "sc-exact", hidden: true },
+    el("label", {}, "min", lowNumber), el("label", {}, "max", highNumber));
+  const once = el("button", { class: "sc-chip", type: "button", text: "once" });
+  const cont = el("button", { class: "sc-chip", type: "button", "aria-pressed": "false", text: "continuous" });
+  const gamma = el("input", { class: "sc-slider", type: "range", min: 0.2, max: 2, step: 0.01, "aria-label": "Gamma" });
   const gammaValue = el("span", { class: "sc-value" });
-  const opacityValue = el("span", { class: "sc-value" });
+  const colormap = el("select", { class: "sc-select", "aria-label": "Colormap" });
+  const colormapSwatch = el("span", { class: "sc-colormap-swatch" });
 
-  const contrastBlock = el("div", { class: "sc-control" },
-    el("div", { class: "sc-control-head" }, el("span", { text: "Contrast limits" }), contrastValue),
-    el("div", { class: "sc-pair" },
-      el("label", { class: "sc-number" }, "Min", lowNumber),
-      el("label", { class: "sc-number" }, "Max", highNumber)),
-    lowSlider, highSlider);
-  const gammaBlock = el("label", { class: "sc-control" },
-    el("span", { class: "sc-control-head" }, el("span", { text: "Gamma" }), gammaValue), gamma);
-  const opacityBlock = el("label", { class: "sc-control" },
-    el("span", { class: "sc-control-head" }, el("span", { text: "Opacity" }), opacityValue), opacity);
-  const editor = el("div", { class: "sc-editor" }, contrastBlock, gammaBlock, opacityBlock);
-  container.append(list, editor);
+  const row = (label, ...widgets) => el("div", { class: "sc-row" }, el("span", { class: "sc-row-label", text: label }), el("div", { class: "sc-row-widget" }, ...widgets));
+  const rows = {
+    opacity: row("opacity:", el("div", { class: "sc-inline" }, opacity, opacityValue)),
+    blending: row("blending:", blending),
+    limits: row("contrast limits:",
+      el("div", { class: "sc-inline" }, el("div", { class: "sc-range" }, rangeFill, lowSlider, highSlider), more),
+      el("div", { class: "sc-limits-text" }, limitsText), exact),
+    auto: row("auto-contrast:", el("div", { class: "sc-chips" }, once, opts.autoContrast === "both" ? cont : null)),
+    gamma: row("gamma:", el("div", { class: "sc-inline" }, gamma, gammaValue)),
+    colormap: row("colormap:", el("div", { class: "sc-inline" }, colormapSwatch, colormap)),
+  };
+  const title = el("div", { class: "sc-controls-title" });
+  const form = el("div", { class: "sc-controls" }, title, ...Object.values(rows));
+  const list = el("div", { class: "sc-layers", role: "listbox", "aria-label": "Layers" });
+  opts.controls.append(form);
+  opts.list.append(list);
 
   const current = () => layers.find((layer) => layer.id === selected) || null;
 
@@ -181,32 +239,50 @@ export function layerList(container, options) {
   }
 
   function renderList() {
-    list.replaceChildren(...layers.map((layer) => {
+    list.replaceChildren(...[...layers].reverse().map((layer) => {
       const isSelected = layer.id === selected;
-      const visible = el("input", { type: "checkbox", "aria-label": `Show ${layer.name}` });
-      visible.checked = layer.visible !== false;
-      visible.addEventListener("change", () => emit(layer.id, { visible: visible.checked }));
-      let swatch = null;
-      if (layer.color) {
-        swatch = el("input", { class: "sc-swatch", type: "color", value: layer.color, "aria-label": `${layer.name} colour` });
-        swatch.addEventListener("input", () => emit(layer.id, { color: swatch.value }));
-      }
-      const pick = el("button", { class: "sc-layer-name", type: "button",
-        onclick: () => { selected = layer.id; renderList(); renderEditor(); } },
-        el("span", { class: "sc-name", text: layer.name }),
-        layer.kind ? el("span", { class: "sc-kind", text: layer.kind }) : null);
-      return el("div", { class: "sc-layer", role: "option", "aria-selected": String(isSelected), "data-selected": String(isSelected) },
-        el("label", { class: "sc-visibility", title: `Show or hide ${layer.name}` }, visible), swatch, pick);
+      const eye = el("button", { class: "sc-eye", type: "button", "aria-pressed": String(layer.visible !== false),
+        "aria-label": `${layer.visible !== false ? "Hide" : "Show"} ${layer.name}` });
+      eye.innerHTML = EYE;
+      eye.addEventListener("click", (event) => { event.stopPropagation(); emit(layer.id, { visible: layer.visible === false }); renderList(); });
+      const thumb = el("span", { class: "sc-thumb" });
+      thumb.style.background = layer.colormap ? colormapGradient(layer.colormap, "to top right") : "var(--sc-surface-2)";
+      const item = el("div", { class: "sc-layer", role: "option", tabindex: 0, "aria-selected": String(isSelected), "data-selected": String(isSelected),
+        "data-hidden": String(layer.visible === false) },
+        eye, thumb,
+        el("span", { class: "sc-layer-text" },
+          el("span", { class: "sc-name", text: layer.name }),
+          layer.kind ? el("span", { class: "sc-kind", text: layer.kind }) : null));
+      const choose = () => { selected = layer.id; renderList(); renderControls(); };
+      item.addEventListener("click", choose);
+      item.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); choose(); } });
+      return item;
     }));
   }
 
-  function renderEditor() {
+  function fillSelect(select, values, currentValue, label = (v) => v) {
+    const key = values.join("|");
+    if (select.dataset.options !== key) {
+      select.replaceChildren(...values.map((v) => new Option(label(v), v)));
+      select.dataset.options = key;
+    }
+    select.value = currentValue;
+  }
+
+  function renderControls() {
     const layer = current();
-    editor.toggleAttribute("data-empty", !layer);
+    form.toggleAttribute("data-empty", !layer);
+    title.textContent = layer ? layer.name : "No layer selected";
     if (!layer) return;
-    const hasContrast = Array.isArray(layer.dataRange) && Array.isArray(layer.limits);
-    contrastBlock.hidden = !hasContrast;
-    if (hasContrast) {
+    rows.opacity.hidden = layer.opacity === undefined;
+    if (layer.opacity !== undefined) { opacity.value = String(layer.opacity); opacityValue.textContent = Number(layer.opacity).toFixed(2); }
+    const blendings = layer.blendings || opts.blendings;
+    rows.blending.hidden = layer.blending === undefined || !blendings.length;
+    if (!rows.blending.hidden) fillSelect(blending, blendings, layer.blending);
+    const hasLimits = Array.isArray(layer.dataRange) && Array.isArray(layer.limits);
+    rows.limits.hidden = !hasLimits;
+    rows.auto.hidden = !hasLimits || opts.autoContrast === "none";
+    if (hasLimits) {
       const [low, high] = layer.dataRange, span = Math.max(high - low, Number.EPSILON);
       const step = layer.step ?? (Number.isInteger(low) && Number.isInteger(high) && span > 100 ? 1 : span / 500);
       for (const input of [lowSlider, highSlider, lowNumber, highNumber]) {
@@ -214,13 +290,20 @@ export function layerList(container, options) {
       }
       lowSlider.value = lowNumber.value = String(layer.limits[0]);
       highSlider.value = highNumber.value = String(layer.limits[1]);
+      rangeFill.style.left = `${((layer.limits[0] - low) / span) * 100}%`;
+      rangeFill.style.right = `${100 - ((layer.limits[1] - low) / span) * 100}%`;
       const digits = digitsFor(span);
-      contrastValue.textContent = `${layer.limits[0].toFixed(digits)} – ${layer.limits[1].toFixed(digits)}`;
+      limitsText.textContent = `${layer.limits[0].toFixed(digits)} – ${layer.limits[1].toFixed(digits)}  (range ${low.toFixed(digits)} – ${high.toFixed(digits)})`;
+      cont.setAttribute("aria-pressed", String(continuous.has(layer.id)));
     }
-    gammaBlock.hidden = layer.gamma === undefined;
+    rows.gamma.hidden = layer.gamma === undefined;
     if (layer.gamma !== undefined) { gamma.value = String(layer.gamma); gammaValue.textContent = Number(layer.gamma).toFixed(2); }
-    opacityBlock.hidden = layer.opacity === undefined;
-    if (layer.opacity !== undefined) { opacity.value = String(layer.opacity); opacityValue.textContent = `${Math.round(layer.opacity * 100)}%`; }
+    const colormaps = layer.colormaps || opts.colormaps;
+    rows.colormap.hidden = layer.colormap === undefined || !colormaps.length;
+    if (!rows.colormap.hidden) {
+      fillSelect(colormap, colormaps, layer.colormap);
+      colormapSwatch.style.background = colormapGradient(layer.colormap);
+    }
   }
 
   function readContrast(source, commit) {
@@ -236,39 +319,65 @@ export function layerList(container, options) {
     }
     low = clamp(low, dataLow, dataHigh);
     high = clamp(high, dataLow, dataHigh);
+    continuous.delete(layer.id);
     if (commit) emit(layer.id, { limits: [low, high] });
     else layer.limits = [low, high];
-    renderEditor();
+    renderControls();
   }
 
+  async function autoContrast(id) {
+    const result = await opts.onAutoContrast?.(id);
+    const layer = layers.find((item) => item.id === id);
+    if (!layer || !Array.isArray(result)) return;
+    let [low, high] = result;
+    if (!(high > low)) high = low + 1;
+    const range = layer.dataRange || [low, high];
+    const patch = { limits: [low, high] };
+    if (low < range[0] || high > range[1]) patch.dataRange = [Math.min(range[0], low), Math.max(range[1], high)];
+    Object.assign(layer, patch);
+    opts.onChange?.(id, { limits: patch.limits });
+    if (id === selected) renderControls();
+  }
+
+  opacity.addEventListener("input", () => { const layer = current(); if (layer) { emit(layer.id, { opacity: Number(opacity.value) }); renderControls(); } });
+  blending.addEventListener("change", () => { const layer = current(); if (layer) emit(layer.id, { blending: blending.value }); });
   const live = opts.contrastCommit === "input";
   for (const slider of [lowSlider, highSlider]) {
     slider.addEventListener("input", () => readContrast("slider", live));
     if (!live) slider.addEventListener("change", () => readContrast("slider", true));
   }
   for (const number of [lowNumber, highNumber]) number.addEventListener("change", () => readContrast("number", true));
-  gamma.addEventListener("input", () => { const layer = current(); if (layer) { emit(layer.id, { gamma: Number(gamma.value) }); renderEditor(); } });
-  opacity.addEventListener("input", () => { const layer = current(); if (layer) { emit(layer.id, { opacity: Number(opacity.value) }); renderEditor(); } });
+  more.addEventListener("click", () => { exact.hidden = !exact.hidden; more.setAttribute("aria-expanded", String(!exact.hidden)); });
+  once.addEventListener("click", () => { const layer = current(); if (layer) { continuous.delete(layer.id); autoContrast(layer.id); } });
+  cont.addEventListener("click", () => {
+    const layer = current(); if (!layer) return;
+    if (continuous.has(layer.id)) continuous.delete(layer.id); else { continuous.add(layer.id); autoContrast(layer.id); }
+    renderControls();
+  });
+  gamma.addEventListener("input", () => { const layer = current(); if (layer) { emit(layer.id, { gamma: Number(gamma.value) }); renderControls(); } });
+  colormap.addEventListener("change", () => { const layer = current(); if (layer) { emit(layer.id, { colormap: colormap.value }); renderControls(); renderList(); } });
 
   renderList();
-  renderEditor();
+  renderControls();
 
   return {
     get layers() { return layers.map((layer) => ({ ...layer })); },
     get selected() { return selected; },
+    isContinuous: (id) => continuous.has(id),
+    autoContrast,
     setLayers(next, keepSelection = true) {
       layers = next.map((layer) => ({ ...layer }));
-      if (!keepSelection || !layers.some((layer) => layer.id === selected)) selected = layers[0]?.id ?? null;
+      for (const id of [...continuous]) if (!layers.some((layer) => layer.id === id)) continuous.delete(id);
+      if (!keepSelection || !layers.some((layer) => layer.id === selected)) selected = layers.at(-1)?.id ?? null;
       renderList();
-      renderEditor();
+      renderControls();
     },
     update(id, patch) {
       const layer = layers.find((item) => item.id === id);
       if (!layer) return;
       Object.assign(layer, patch);
       renderList();
-      renderEditor();
+      renderControls();
     },
-    element: editor,
   };
 }
