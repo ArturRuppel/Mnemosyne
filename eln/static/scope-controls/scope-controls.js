@@ -92,12 +92,16 @@ function formatSpatial(value, unit) {
 // One napari dims row: play, axis name, slider (with step buttons for touch),
 // and "index / last" with the elapsed or physical position. Playback waits for
 // a promise returned by onChange before scheduling the next step, so slow
-// renderers are never outrun.
+// renderers are never outrun. As in napari, right-clicking (or long-pressing)
+// play opens the playback settings: frames per second and loop mode.
 //
-// options: { label, name, count, value, spacing, unit, playable, playDelay, onChange }
+// options: { label, name, count, value, spacing, unit, playable, fps, loop, onChange }
+// loop: "loop" | "back_and_forth" | "once"
+export const LOOP_MODES = { loop: "Loop", back_and_forth: "Back and forth", once: "Once" };
+
 export function axisControl(container, options) {
-  const opts = { value: 0, spacing: null, unit: null, playable: true, playDelay: 450, ...options };
-  let count = opts.count, value = opts.value, playing = false, timer = null, token = 0;
+  const opts = { value: 0, spacing: null, unit: null, playable: true, fps: 10, loop: "loop", ...options };
+  let count = opts.count, value = opts.value, playing = false, timer = null, token = 0, direction = 1;
   const isTime = /^t/i.test(opts.name || opts.label);
 
   const slider = el("input", { class: "sc-slider", type: "range", min: 0, step: 1, "aria-label": opts.label });
@@ -116,6 +120,21 @@ export function axisControl(container, options) {
     prev, slider, next,
     el("span", { class: "sc-readout" }, index, last, physical));
   container.append(root);
+
+  const fpsInput = el("input", { type: "number", min: 0.5, max: 60, step: 0.5, inputmode: "decimal", "aria-label": "Frames per second" });
+  const loopSelect = el("select", { "aria-label": "Loop mode" }, ...Object.entries(LOOP_MODES).map(([key, text]) => new Option(text, key)));
+  const settings = el("div", { class: "sc-play-settings", role: "dialog", "aria-label": `${opts.label} playback`, hidden: true },
+    el("label", {}, "fps", fpsInput), el("label", {}, "loop", loopSelect));
+  root.append(settings);
+  const syncSettings = () => { fpsInput.value = String(opts.fps); loopSelect.value = opts.loop; };
+  function openSettings(open) {
+    settings.hidden = !open;
+    if (open) { syncSettings(); fpsInput.focus(); }
+  }
+  fpsInput.addEventListener("change", () => { const fps = Number(fpsInput.value); if (fps > 0) opts.fps = clamp(fps, 0.5, 60); syncSettings(); });
+  loopSelect.addEventListener("change", () => { opts.loop = loopSelect.value; direction = 1; });
+  settings.addEventListener("keydown", (event) => { if (event.key === "Escape") openSettings(false); });
+  document.addEventListener("pointerdown", (event) => { if (!settings.hidden && !settings.contains(event.target) && event.target !== play) openSettings(false); });
 
   function render() {
     slider.max = index.max = String(Math.max(0, count - 1));
@@ -145,23 +164,48 @@ export function axisControl(container, options) {
     if (playing) step(token);
   }
 
+  function nextFrame() {
+    if (opts.loop === "back_and_forth") {
+      if (value + direction > count - 1 || value + direction < 0) direction = -direction;
+      return value + direction;
+    }
+    if (value >= count - 1) return opts.loop === "once" ? null : 0;
+    return value + 1;
+  }
+
+  // The frame interval counts from the start of each step, so a slow renderer
+  // lowers the rate but never queues frames.
   async function step(mine) {
     if (!playing || mine !== token) return;
-    try { await set(value >= count - 1 ? 0 : value + 1); } catch { setPlaying(false); return; }
-    if (playing && mine === token) timer = window.setTimeout(() => step(mine), opts.playDelay);
+    const started = performance.now(), target = nextFrame();
+    if (target === null) { setPlaying(false); return; }
+    try { await set(target); } catch { setPlaying(false); return; }
+    const wait = Math.max(0, 1000 / opts.fps - (performance.now() - started));
+    if (playing && mine === token) timer = window.setTimeout(() => step(mine), wait);
   }
 
   slider.addEventListener("input", () => set(slider.value));
   index.addEventListener("change", () => set(index.value));
   prev.addEventListener("click", () => set(value - 1));
   next.addEventListener("click", () => set(value + 1));
-  if (opts.playable) play.addEventListener("click", () => setPlaying(!playing));
+  if (opts.playable) {
+    let pressTimer = null, longPressed = false;
+    play.title = "Play · right-click or long-press for frame rate";
+    play.addEventListener("click", () => { if (longPressed) { longPressed = false; return; } setPlaying(!playing); });
+    play.addEventListener("contextmenu", (event) => { event.preventDefault(); if (!longPressed) openSettings(settings.hidden); });
+    play.addEventListener("pointerdown", (event) => {
+      if (event.pointerType !== "touch") return;
+      pressTimer = window.setTimeout(() => { longPressed = true; openSettings(true); }, 500);
+    });
+    for (const type of ["pointerup", "pointercancel", "pointerleave"]) play.addEventListener(type, () => window.clearTimeout(pressTimer));
+  }
   document.addEventListener("visibilitychange", () => { if (document.hidden) setPlaying(false); });
   render();
 
   return {
     get value() { return value; },
     get playing() { return playing; },
+    get fps() { return opts.fps; },
     set,
     setPlaying,
     configure(changes) {
@@ -380,4 +424,64 @@ export function layerPanel(options) {
       renderControls();
     },
   };
+}
+
+// A draggable divider that sizes a panel through a CSS custom property on
+// <html>, e.g. --sc-dock-width. `edge` is where the handle sits relative to the
+// panel ("right", "left", "bottom"), which decides the drag direction.
+// Double-click restores the default; arrow keys nudge. Sizes persist per
+// viewer in localStorage when it is available.
+//
+// options: { panel, property, edge, min, max, storageKey, onResize }
+export function splitter(handle, options) {
+  const opts = { edge: "right", min: 160, max: 900, ...options };
+  const vertical = opts.edge === "bottom";
+  const root = document.documentElement;
+  const read = () => { try { return window.localStorage.getItem(opts.storageKey); } catch { return null; } };
+  const write = (v) => { try { if (v === null) window.localStorage.removeItem(opts.storageKey); else window.localStorage.setItem(opts.storageKey, v); } catch { /* storage unavailable */ } };
+  const size = () => { const box = opts.panel.getBoundingClientRect(); return vertical ? box.height : box.width; };
+  function apply(px, persist = true) {
+    const limit = typeof opts.max === "function" ? opts.max() : opts.max;
+    const value = `${Math.round(clamp(px, opts.min, Math.max(opts.min, limit)))}px`;
+    root.style.setProperty(opts.property, value);
+    if (persist && opts.storageKey) write(value);
+    opts.onResize?.();
+  }
+  handle.classList.add("sc-splitter", vertical ? "sc-splitter-y" : "sc-splitter-x");
+  handle.setAttribute("role", "separator");
+  handle.setAttribute("tabindex", "0");
+  handle.setAttribute("aria-orientation", vertical ? "horizontal" : "vertical");
+  handle.title = "Drag to resize · double-click to reset";
+  const saved = opts.storageKey && read();
+  if (saved) root.style.setProperty(opts.property, saved);
+
+  const sign = opts.edge === "left" ? -1 : 1;
+  handle.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    handle.setPointerCapture(event.pointerId);
+    const start = vertical ? event.clientY : event.clientX, from = size();
+    handle.dataset.dragging = "true";
+    document.body.style.cursor = vertical ? "row-resize" : "col-resize";
+    const move = (e) => apply(from + sign * ((vertical ? e.clientY : e.clientX) - start), false);
+    const end = (e) => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", end);
+      handle.removeEventListener("pointercancel", end);
+      delete handle.dataset.dragging;
+      document.body.style.cursor = "";
+      apply(size());
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", end);
+    handle.addEventListener("pointercancel", end);
+  });
+  handle.addEventListener("dblclick", () => { root.style.removeProperty(opts.property); write(null); opts.onResize?.(); });
+  handle.addEventListener("keydown", (event) => {
+    const grow = vertical ? "ArrowDown" : (opts.edge === "left" ? "ArrowLeft" : "ArrowRight");
+    const shrink = vertical ? "ArrowUp" : (opts.edge === "left" ? "ArrowRight" : "ArrowLeft");
+    if (event.key !== grow && event.key !== shrink) return;
+    event.preventDefault();
+    apply(size() + (event.key === grow ? 16 : -16));
+  });
 }

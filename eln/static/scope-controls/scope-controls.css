@@ -163,3 +163,22 @@
 /* Viewer buttons (napari's row under the layer list); hosts add class sc-buttons */
 .sc-buttons { display: flex; gap: 6px; font-family: var(--sc-font); }
 .sc-buttons .sc-icon.sc-wide { width: auto; padding: 0 10px; font-size: 13px; font-weight: 650; }
+
+/* Playback settings (right-click or long-press on play) */
+.sc-dim { position: relative; }
+.sc-dim .sc-play-settings {
+  position: absolute; z-index: 30; left: 0; bottom: calc(100% + 6px); display: grid; gap: 6px; padding: 8px 10px;
+  border: 1px solid var(--sc-line); border-radius: 8px; background: var(--sc-surface); box-shadow: var(--sc-shadow);
+}
+.sc-dim .sc-play-settings[hidden] { display: none; }
+.sc-dim .sc-play-settings label { display: grid; grid-template-columns: 3em 1fr; gap: 6px; align-items: center; margin: 0; color: var(--sc-muted); font-size: 12px; font-weight: 600; }
+.sc-dim .sc-play-settings input, .sc-dim .sc-play-settings select {
+  width: 9em; min-height: 28px; padding: 2px 5px; border: 1px solid var(--sc-line); border-radius: 5px; color: var(--sc-ink); background: var(--sc-surface);
+}
+
+/* Draggable dividers between panels */
+.sc-splitter { position: relative; z-index: 5; background: var(--sc-line); touch-action: none; }
+.sc-splitter-x { width: 5px; cursor: col-resize; }
+.sc-splitter-y { height: 5px; cursor: row-resize; }
+.sc-splitter::after { content: ""; position: absolute; inset: -4px; }
+.sc-splitter:hover, .sc-splitter:focus-visible, .sc-splitter[data-dragging] { background: var(--sc-accent); outline: none; }
