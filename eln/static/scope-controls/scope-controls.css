@@ -1,0 +1,118 @@
+/* scope-controls — shared look for microscopy viewer controls.
+ *
+ * Canonical copy: electronic_labbook/eln/static/scope-controls/. Vendor it
+ * unchanged. The palette is the lab book's: navy bar, blue accent. Light is the
+ * default; set data-theme="dark" on <html> for the dark variant. Pages may use
+ * the --sc-* tokens for their own chrome so everything stays in one palette.
+ */
+
+:root {
+  color-scheme: light;
+  --sc-ink: #27313a;
+  --sc-muted: #64727d;
+  --sc-bar: #263646;
+  --sc-bar-ink: #ffffff;
+  --sc-accent: #286b9f;
+  --sc-accent-ink: #ffffff;
+  --sc-accent-soft: #e5edf4;
+  --sc-ground: #eef1f4;
+  --sc-surface: #ffffff;
+  --sc-surface-2: #f7f9fb;
+  --sc-line: #d7dde2;
+  --sc-track: #c8d4dd;
+  --sc-danger: #b3261e;
+  --sc-shadow: 0 4px 22px rgba(32, 45, 57, .16);
+  --sc-radius: 8px;
+  --sc-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --sc-ink: #e6edf2;
+  --sc-muted: #93a3af;
+  --sc-bar: #16212c;
+  --sc-bar-ink: #e6edf2;
+  --sc-accent: #6aa8d8;
+  --sc-accent-ink: #0c141b;
+  --sc-accent-soft: #1d3346;
+  --sc-ground: #0d1217;
+  --sc-surface: #141b22;
+  --sc-surface-2: #1a232b;
+  --sc-line: #2a3642;
+  --sc-track: #33424f;
+  --sc-danger: #ff9b92;
+  --sc-shadow: 0 4px 22px rgba(0, 0, 0, .45);
+}
+
+.sc-axis, .sc-layers, .sc-editor { font-family: var(--sc-font); color: var(--sc-ink); }
+.sc-axis *, .sc-layers *, .sc-editor * { box-sizing: border-box; }
+.sc-axis input, .sc-axis button, .sc-layers input, .sc-layers button, .sc-editor input { font: inherit; }
+
+.sc-button {
+  min-width: 40px; min-height: 40px; padding: 0 10px;
+  border: 1px solid var(--sc-line); border-radius: var(--sc-radius);
+  color: var(--sc-ink); background: var(--sc-surface-2);
+  font-weight: 700; cursor: pointer; touch-action: manipulation;
+}
+.sc-button:hover { border-color: var(--sc-accent); }
+.sc-button.sc-primary { color: var(--sc-accent-ink); background: var(--sc-accent); border-color: var(--sc-accent); }
+.sc-button:disabled { opacity: .45; cursor: not-allowed; }
+
+.sc-slider { width: 100%; min-height: 28px; margin: 0; accent-color: var(--sc-accent); }
+
+/* Axis */
+.sc-axis { display: grid; gap: 6px; }
+.sc-axis[data-single] { opacity: .55; }
+.sc-axis-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: .8rem; }
+.sc-readout { display: inline-flex; align-items: baseline; gap: 2px; font-variant-numeric: tabular-nums; color: var(--sc-muted); }
+/* Selectors below carry two classes so host-page element rules (input, label) never win. */
+.sc-axis .sc-index {
+  width: 4.2em; min-height: 28px; padding: 2px 4px; text-align: right;
+  border: 1px solid transparent; border-radius: 6px; background: transparent;
+  color: var(--sc-ink); font-weight: 700; -moz-appearance: textfield;
+}
+.sc-axis .sc-index::-webkit-inner-spin-button, .sc-axis .sc-index::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.sc-axis .sc-index:hover, .sc-axis .sc-index:focus { border-color: var(--sc-line); background: var(--sc-surface); }
+.sc-physical:not(:empty) { margin-left: 8px; }
+.sc-axis-row { display: grid; grid-template-columns: 40px 40px minmax(80px, 1fr); gap: 6px; align-items: center; }
+.sc-axis-playable .sc-axis-row { grid-template-columns: 40px 40px 40px minmax(80px, 1fr); }
+.sc-axis .sc-slider { min-height: 40px; }
+
+/* Layers */
+.sc-layers { display: grid; gap: 5px; }
+.sc-layer {
+  min-height: 48px; display: flex; align-items: stretch; overflow: hidden;
+  border: 1px solid transparent; border-radius: var(--sc-radius); background: var(--sc-surface-2);
+}
+.sc-layer[data-selected="true"] { border-color: var(--sc-accent); background: var(--sc-accent-soft); }
+.sc-visibility { width: 40px; flex: none; display: grid; place-items: center; border-right: 1px solid var(--sc-line); cursor: pointer; }
+.sc-visibility input { width: 20px; height: 20px; accent-color: var(--sc-accent); }
+.sc-swatch { width: 34px; flex: none; align-self: center; height: 28px; margin-left: 6px; padding: 2px; border: 0; background: none; cursor: pointer; }
+.sc-layer-name { flex: 1; min-width: 0; padding: 6px 9px; border: 0; background: transparent; color: var(--sc-ink); text-align: left; cursor: pointer; }
+.sc-name, .sc-kind { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-name { font-size: .82rem; font-weight: 700; }
+.sc-kind { margin-top: 2px; color: var(--sc-muted); font-size: .67rem; letter-spacing: .07em; text-transform: uppercase; }
+
+/* Selected-layer editor */
+.sc-editor { display: grid; gap: 13px; padding: 10px 2px; }
+.sc-editor[data-empty] { opacity: .5; pointer-events: none; }
+.sc-editor .sc-control { display: grid; gap: 5px; margin: 0; color: var(--sc-ink); }
+.sc-editor .sc-control[hidden] { display: none; }
+.sc-control-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: .75rem; font-weight: 700; }
+.sc-value { color: var(--sc-muted); font-variant-numeric: tabular-nums; font-weight: 600; }
+.sc-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.sc-editor .sc-number { margin: 0; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 5px; color: var(--sc-muted); font-size: .68rem; font-weight: 600; }
+.sc-editor .sc-number input {
+  width: 100%; min-height: 34px; padding: 4px 6px;
+  border: 1px solid var(--sc-line); border-radius: 6px; color: var(--sc-ink); background: var(--sc-surface);
+}
+
+@media (max-width: 480px) {
+  .sc-layer { min-height: 56px; }
+  .sc-visibility { width: 48px; }
+  .sc-visibility input { width: 24px; height: 24px; }
+  .sc-editor .sc-number input, .sc-axis .sc-index { min-height: 42px; font-size: 16px; }
+  .sc-axis-row { grid-template-columns: 44px 44px 1fr; }
+  .sc-axis-playable .sc-axis-row { grid-template-columns: 44px 44px 44px 1fr; }
+  .sc-button { min-width: 44px; min-height: 44px; }
+}
