@@ -224,8 +224,11 @@ export function axisControl(container, options) {
 // are hidden, so each renderer opts in per feature.
 //
 // layer: { id, name, kind, visible, opacity?, blending?, blendings?, dataRange?,
-//          limits?, gamma?, colormap?, colormaps? }
-// options: { controls, list, layers, selected, colormaps, blendings,
+//          limits?, exposure?, offset?, gamma?, colormap?, colormaps? }
+// exposure (EV) and offset are a per-layer grade for renderers that window a
+// layer themselves: the host maps them onto the layer (0 is neutral, and a
+// double-click on either slider resets it).
+// options: { controls, list, layers, selected, colormaps, blendings, exposureRange,
 //            contrastCommit: "input" | "change", autoContrast: "none" | "once" | "both",
 //            onChange(id, patch), onSelect(id), onAutoContrast(id) -> [low, high] | Promise }
 // With contrastCommit "change", contrast is committed on release, for
@@ -252,6 +255,11 @@ export function layerPanel(options) {
     el("label", {}, "min", lowNumber), el("label", {}, "max", highNumber));
   const once = el("button", { class: "sc-chip", type: "button", text: "once" });
   const cont = el("button", { class: "sc-chip", type: "button", "aria-pressed": "false", text: "continuous" });
+  const [exposureMin, exposureMax] = opts.exposureRange || [-8, 8];
+  const exposure = el("input", { class: "sc-slider", type: "range", min: exposureMin, max: exposureMax, step: 0.1, "aria-label": "Exposure", title: "Double-click to reset" });
+  const exposureValue = el("span", { class: "sc-value" });
+  const offset = el("input", { class: "sc-slider", type: "range", min: -1, max: 1, step: 0.01, "aria-label": "Offset", title: "Double-click to reset" });
+  const offsetValue = el("span", { class: "sc-value" });
   const gamma = el("input", { class: "sc-slider", type: "range", min: 0.2, max: 2, step: 0.01, "aria-label": "Gamma" });
   const gammaValue = el("span", { class: "sc-value" });
   const colormap = el("select", { class: "sc-select", "aria-label": "Colormap" });
@@ -265,6 +273,8 @@ export function layerPanel(options) {
       el("div", { class: "sc-inline" }, el("div", { class: "sc-range" }, rangeFill, lowSlider, highSlider), more),
       el("div", { class: "sc-limits-text" }, limitsText), exact),
     auto: row("auto-contrast:", el("div", { class: "sc-chips" }, once, opts.autoContrast === "both" ? cont : null)),
+    exposure: row("exposure:", el("div", { class: "sc-inline" }, exposure, exposureValue)),
+    offset: row("offset:", el("div", { class: "sc-inline" }, offset, offsetValue)),
     gamma: row("gamma:", el("div", { class: "sc-inline" }, gamma, gammaValue)),
     colormap: row("colormap:", el("div", { class: "sc-inline" }, colormapSwatch, colormap)),
   };
@@ -340,6 +350,10 @@ export function layerPanel(options) {
       limitsText.textContent = `${layer.limits[0].toFixed(digits)} – ${layer.limits[1].toFixed(digits)}  (range ${low.toFixed(digits)} – ${high.toFixed(digits)})`;
       cont.setAttribute("aria-pressed", String(continuous.has(layer.id)));
     }
+    rows.exposure.hidden = layer.exposure === undefined;
+    if (layer.exposure !== undefined) { exposure.value = String(layer.exposure); exposureValue.textContent = `${Number(layer.exposure).toFixed(1)} EV`; }
+    rows.offset.hidden = layer.offset === undefined;
+    if (layer.offset !== undefined) { offset.value = String(layer.offset); offsetValue.textContent = Number(layer.offset).toFixed(2); }
     rows.gamma.hidden = layer.gamma === undefined;
     if (layer.gamma !== undefined) { gamma.value = String(layer.gamma); gammaValue.textContent = Number(layer.gamma).toFixed(2); }
     const colormaps = layer.colormaps || opts.colormaps;
@@ -398,6 +412,11 @@ export function layerPanel(options) {
     if (continuous.has(layer.id)) continuous.delete(layer.id); else { continuous.add(layer.id); autoContrast(layer.id); }
     renderControls();
   });
+  for (const [slider, key] of [[exposure, "exposure"], [offset, "offset"]]) {
+    const commit = (value) => { const layer = current(); if (layer) { emit(layer.id, { [key]: value }); renderControls(); } };
+    slider.addEventListener("input", () => commit(Number(slider.value)));
+    slider.addEventListener("dblclick", () => commit(0));
+  }
   gamma.addEventListener("input", () => { const layer = current(); if (layer) { emit(layer.id, { gamma: Number(gamma.value) }); renderControls(); } });
   colormap.addEventListener("change", () => { const layer = current(); if (layer) { emit(layer.id, { colormap: colormap.value }); renderControls(); renderList(); } });
 

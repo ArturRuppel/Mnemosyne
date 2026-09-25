@@ -121,6 +121,36 @@ def test_generate_all_writes_all_pages(data_root):
         assert (catalog / page).exists(), f"{page} missing"
     assert set(written) == {"experiments", "protocols", "reports",
                             "presentations", "documents", "code", "posters"}
+    assert not (catalog / "explorers.html").exists()
+
+
+def _explorer(root, experiment):
+    bundle = root / "explorers" / experiment
+    bundle.mkdir(parents=True)
+    (bundle / "index.html").write_text("<h1>viewer</h1>")
+    (bundle / "explorer.json").write_text(
+        '{"title": "TFM viewer", "experiment": "%s"}' % experiment)
+
+
+def test_catalog_links_session_explorer(data_root):
+    root, db, expected = data_root
+    _explorer(root, "TFMSP-01")
+    generate_catalog(root)
+    html = (root / "catalog" / "experiments.html").read_text()
+    assert '<th data-column="explorer">Explorer</th>' in html
+    row = re.search(r'<tr data-id="1".*?</tr>', html, re.S).group(0)
+    assert 'href="explorers/TFMSP-01/index.html"' in row
+    other = re.search(r'<tr data-id="2".*?</tr>', html, re.S).group(0)
+    assert "explorer-link" not in other
+
+
+def test_report_overview_links_session_explorer(data_root):
+    root, db, expected = data_root
+    _explorer(root, "TFMSP-02")
+    generate_reports(root)
+    html = (root / "catalog" / "reports.html").read_text()
+    assert "<th>Explorer</th>" in html
+    assert 'href="explorers/TFMSP-02/index.html"' in html
 
 
 def test_catalog_has_ids_and_derived_dates(data_root):

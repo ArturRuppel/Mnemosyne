@@ -20,6 +20,14 @@ def test_builtin_includes_documents():
     assert "documents" in names
 
 
+def test_explorers_declares_generator_and_mount_but_no_nav():
+    # Explorers are linked from the catalog and report tables, not a nav tab.
+    explorer = next(p for p in discover_plugins() if p.name == "explorers")
+    assert explorer.nav is None
+    assert callable(explorer.generate)
+    assert explorer.static_mount.url_prefix == "explorers"
+
+
 def test_documents_declares_nav_generator_and_mount():
     docs = next(p for p in discover_plugins() if p.name == "documents")
     assert isinstance(docs.nav, NavLink)

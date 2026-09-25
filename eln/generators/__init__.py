@@ -11,6 +11,7 @@ via SDGL, never stored in the DB.
 
 from eln.generators.catalog import generate_catalog
 from eln.generators.documents import generate_documents
+from eln.generators.explorers import generate_explorers
 from eln.generators.posters import generate_posters
 from eln.generators.presentations import generate_presentations
 from eln.generators.protocols import generate_protocol_catalog
@@ -20,6 +21,7 @@ from eln.plugins import discover_plugins
 __all__ = [
     "generate_catalog",
     "generate_documents",
+    "generate_explorers",
     "generate_posters",
     "generate_presentations",
     "generate_protocol_catalog",
@@ -33,7 +35,8 @@ def generate_all(root, catalog_out=None):
 
     The same discovered plugin set feeds each core generator (so the nav stays
     consistent) and supplies the plugin-contributed pages. Returns a dict mapping
-    each page name to the path it was written to.
+    each page name to the path it was written to (generators that write no page
+    are left out).
     """
     plugins = discover_plugins()
     written = {
@@ -43,5 +46,8 @@ def generate_all(root, catalog_out=None):
     }
     for plugin in plugins:
         if plugin.generate:
-            written[plugin.name] = plugin.generate(root, catalog_out)
+            # A generator may only copy files (explorer bundles) and write no page.
+            page = plugin.generate(root, catalog_out)
+            if page is not None:
+                written[plugin.name] = page
     return written

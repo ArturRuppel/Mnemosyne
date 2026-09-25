@@ -16,6 +16,7 @@ from pathlib import Path
 
 from eln.sdgl import format_experiment_id, parse_code_folder
 from eln.generators.catalog import get_experiment_date_from_files
+from eln.generators.explorers import explorer_cell, explorer_links
 from eln.generators.nav import render_nav
 
 DEFAULT_DB_NAME = "experiments.db"
@@ -550,6 +551,20 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         .exp-overview tr:last-child td {{
             border-bottom: none;
         }}
+        .exp-overview .explorer-link {{
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 6px;
+            background: #286b9f;
+            color: #fff;
+            font-weight: 650;
+            font-size: 0.78rem;
+            text-decoration: none;
+            white-space: nowrap;
+        }}
+        .exp-overview .explorer-link:hover {{
+            background: #1f5680;
+        }}
         .exp-overview .exp-id {{
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
             font-weight: 650;
@@ -756,9 +771,12 @@ def _chips(items):
     )
 
 
-def build_experiments_block(code, eln_conn, sdgl_conn):
+def build_experiments_block(code, eln_conn, sdgl_conn, explorers=None):
     """Build the self-contained HTML overview for a series: header (code + title),
     a table of active repetitions, and the deduplicated protocols used.
+
+    *explorers* maps ``CODE-NN`` to that session's interactive explorers (see
+    ``explorer_links``); the table links them from its Explorer column.
 
     A typo'd / unknown series code renders an inline error note rather than
     crashing, so the mistake is visible in the rendered report.
@@ -823,6 +841,7 @@ def build_experiments_block(code, eln_conn, sdgl_conn):
         rows.append(f"""
                 <tr>
                     <td><span class="exp-id">{experiment_code}</span></td>
+                    <td>{explorer_cell((explorers or {}).get(experiment_code))}</td>
                     <td>{date_cell}</td>
                     <td>{_chips(cell_types)}</td>
                     <td>{exp["microscope"] or '<span class="date-missing">-</span>'}</td>
@@ -835,7 +854,7 @@ def build_experiments_block(code, eln_conn, sdgl_conn):
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th><th>Date</th><th>Cell Types</th>
+                        <th>ID</th><th>Explorer</th><th>Date</th><th>Cell Types</th>
                         <th>Microscope</th><th>Channels</th><th>Tags</th>
                     </tr>
                 </thead>
@@ -1351,6 +1370,8 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
         # A single-report export (``only`` set) renders the report expanded with a
         # plain, non-collapsible header — there's nothing to collapse it against.
         standalone = only is not None
+        # Sessions with an interactive explorer link it from the overview tables.
+        explorers = explorer_links(root)
 
         provenance = report_provenance(root)
         # Cross-link any notebook import of a code/ module to the Code page. Lazy
@@ -1391,7 +1412,7 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
             # generated HTML intact. No token → pass-through (e.g. Bluesky thread).
             if PLACEHOLDER in html_content:
                 if series_code:
-                    block = build_experiments_block(series_code, eln_conn, sdgl_conn)
+                    block = build_experiments_block(series_code, eln_conn, sdgl_conn, explorers)
                 else:
                     block = ('<div class="exp-overview-error">No <code>**Series:**</code> '
                              'declared for this overview.</div>')

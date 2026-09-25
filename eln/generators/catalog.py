@@ -12,6 +12,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
+from eln.generators.explorers import explorer_cell, explorer_links
 from eln.generators.nav import render_nav
 from eln.sdgl import allocate_experiment_codes, format_experiment_id
 
@@ -176,14 +177,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         th[data-column="experiment_id"] {{ width: 7%; }}
         .exp-id {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 650; color: #2b5878; white-space: nowrap; }}
         th[data-column="experiment_type"] {{ width: 10%; }}
+        th[data-column="explorer"] {{ width: 7%; }}
         th[data-column="date"] {{ width: 6%; }}
         th[data-column="sample"] {{ width: 6%; }}
-        th[data-column="cell_types"] {{ width: 11%; }}
-        th[data-column="microscope"] {{ width: 10%; }}
+        th[data-column="cell_types"] {{ width: 10%; }}
+        th[data-column="microscope"] {{ width: 9%; }}
         th[data-column="channels"] {{ width: 12%; }}
-        th[data-column="protocol"] {{ width: 9%; }}
-        th[data-column="tags"] {{ width: 9%; }}
-        th[data-column="comments"] {{ width: 14%; }}
+        th[data-column="protocol"] {{ width: 8%; }}
+        th[data-column="tags"] {{ width: 8%; }}
+        th[data-column="comments"] {{ width: 11%; }}
         th {{
             background: #f3f6f8;
             color: #53616d;
@@ -245,6 +247,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         .protocol-link:hover {{
             text-decoration: underline;
+        }}
+        .explorer-link {{
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            background: #286b9f;
+            color: #fff;
+            font-weight: 650;
+            font-size: 0.82rem;
+            text-decoration: none;
+            white-space: nowrap;
+        }}
+        .explorer-link:hover {{
+            background: #1f5680;
         }}
         .comments-cell {{
             font-size: 0.9rem;
@@ -347,6 +363,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                         <th data-column="thumbnail">Preview</th>
                         <th data-column="experiment_id">ID</th>
                         <th data-column="experiment_type">Title</th>
+                        <th data-column="explorer">Explorer</th>
                         <th data-column="date">Date</th>
                         <th data-column="sample">Sample</th>
                         <th data-column="cell_types">Cell Types</th>
@@ -606,6 +623,9 @@ def generate_catalog(root, catalog_out=None, plugins=None):
     else:
         date_range = "N/A"
 
+    # Interactive explorers, linked per session from their own column.
+    explorers = explorer_links(root)
+
     # Generate table rows
     experiments_html = []
     for exp in experiments:
@@ -679,6 +699,7 @@ def generate_catalog(root, catalog_out=None, plugins=None):
             <tr data-id="{exp['id']}"
                 data-experiment_id="{experiment_code}"
                 data-experiment_type="{exp.get('experiment_type', '')}"
+                data-explorer="{'yes' if explorers.get(experiment_code) else ''}"
                 data-date="{exp.get('derived_date') or ''}"
                 data-sample="{exp.get('live_or_fixed', '')}"
                 data-cell_types="{exp.get('cell_types', '')}"
@@ -690,6 +711,7 @@ def generate_catalog(root, catalog_out=None, plugins=None):
                 <td>{thumbnail_cell}</td>
                 <td><span class="exp-id">{experiment_code}</span></td>
                 <td>{exp.get('experiment_type', '-')}</td>
+                <td>{explorer_cell(explorers.get(experiment_code))}</td>
                 <td>{_format_date_cell(exp.get('derived_date'))}</td>
                 <td>{exp.get('live_or_fixed', '-')}</td>
                 <td>{cell_types_cell}</td>

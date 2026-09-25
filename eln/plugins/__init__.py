@@ -4,7 +4,8 @@ A plugin extends the notebook through four clean extension points, each an
 optional field on :class:`Plugin`:
 
 - **nav registration** — :class:`NavLink` shown in every page's nav bar.
-- **generator hook** — ``generate(root, catalog_out)`` writes a static page.
+- **generator hook** — ``generate(root, catalog_out)`` writes a static page, or
+  returns ``None`` when it only copies files into an export.
 - **serving route** — :class:`StaticMount` (and optional ``register_routes``)
   served by the Flask app.
 - **scan-root contribution** — ``scan_roots(root)`` adds directories to the SDGL
@@ -55,9 +56,15 @@ class Plugin:
 def _builtin_plugins() -> list:
     """The in-tree plugins. Imported lazily to avoid an import cycle (the
     plugins import names from this module)."""
-    from eln.plugins import code, documents, posters, presentations
+    from eln.plugins import code, documents, explorers, posters, presentations
 
-    return [presentations.plugin, documents.plugin, code.plugin, posters.plugin]
+    return [
+        presentations.plugin,
+        documents.plugin,
+        code.plugin,
+        posters.plugin,
+        explorers.plugin,
+    ]
 
 
 def _entry_point_plugins() -> list:
