@@ -180,5 +180,9 @@
 .sc-splitter { position: relative; z-index: 5; background: var(--sc-line); touch-action: none; }
 .sc-splitter-x { width: 5px; cursor: col-resize; }
 .sc-splitter-y { height: 5px; cursor: row-resize; }
-.sc-splitter::after { content: ""; position: absolute; inset: -4px; }
+/* A wider grab area along the drag direction only, so a full-width divider
+   does not widen the page by its hit area. */
+.sc-splitter::after { content: ""; position: absolute; }
+.sc-splitter-x::after { inset: 0 -4px; }
+.sc-splitter-y::after { inset: -4px 0; }
 .sc-splitter:hover, .sc-splitter:focus-visible, .sc-splitter[data-dragging] { background: var(--sc-accent); outline: none; }
