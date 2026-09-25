@@ -1,7 +1,7 @@
 // scope-controls — shared layer and dims controls for microscopy viewers.
 //
 // Canonical copy: electronic_labbook/eln/static/scope-controls/. Viewers that
-// use it (lab-book explorers, Cellpose Web) vendor this file and
+// use it (lab-book explorers, ITASC Web) vendor this file and
 // scope-controls.css unchanged; edit here and copy out.
 //
 // The layout follows napari: a layer-controls form for the selected layer
