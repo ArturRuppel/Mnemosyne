@@ -149,6 +149,16 @@
 .sc-layers .sc-name, .sc-layers .sc-kind { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sc-layers .sc-name { font-size: 13px; font-weight: 650; }
 .sc-layers .sc-kind { color: var(--sc-muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.sc-layers .sc-group {
+  display: flex; align-items: center; gap: 6px; min-height: 34px; margin-top: 4px; padding: 2px 8px 2px 4px;
+  border-radius: 6px; background: var(--sc-surface-2); cursor: pointer; user-select: none;
+}
+.sc-layers .sc-group:focus-visible { outline: 2px solid var(--sc-accent); outline-offset: 1px; }
+.sc-layers .sc-group .sc-caret { width: 14px; color: var(--sc-muted); text-align: center; }
+.sc-layers .sc-group .sc-name { flex: 1; min-width: 0; }
+.sc-layers .sc-group .sc-count { color: var(--sc-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.sc-layers .sc-group[data-hidden="true"] .sc-name { opacity: .5; }
+.sc-layers .sc-layer[data-grouped="true"] { margin-left: 18px; }
 
 @media (max-width: 480px) {
   .sc-dim { grid-template-columns: 40px auto 36px minmax(40px, 1fr) 36px; }

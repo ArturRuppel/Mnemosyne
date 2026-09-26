@@ -11,7 +11,7 @@
 // each viewer supplies callbacks that talk to its own renderer, so a
 // server-rendered PNG stack and a Luxar scene share widgets, not a backend.
 
-export const VERSION = "3";
+export const VERSION = "4";
 
 // napari's image-layer blending modes, in napari's menu order.
 export const BLENDINGS = ["translucent", "translucent_no_depth", "additive", "minimum", "opaque"];
@@ -31,6 +31,8 @@ export const COLORMAPS = {
   phase: ["#a8780d", "#6a8b12", "#0f8f8c", "#5b6fd5", "#b653a8", "#a8780d"],
   RdBu: ["#67001f", "#d6604d", "#f7f7f7", "#4393c3", "#053061"],
   coolwarm: ["#3b4cc0", "#aac7fd", "#dddddd", "#f7b89c", "#b40426"],
+  seismic: ["#00004c", "#0000ff", "#ffffff", "#ff0000", "#800000"],
+  white: ["#fff", "#fff"],
 };
 
 export function colormapGradient(name, direction = "to right") {
@@ -223,12 +225,16 @@ export function axisControl(container, options) {
 // `list` the layer list (top row = drawn last). Rows a layer does not define
 // are hidden, so each renderer opts in per feature.
 //
-// layer: { id, name, kind, visible, opacity?, blending?, blendings?, dataRange?,
+// layer: { id, name, kind, visible, group?, opacity?, blending?, blendings?, dataRange?,
 //          limits?, exposure?, offset?, gamma?, colormap?, colormaps? }
+// Layers sharing a `group` (keep a group's layers adjacent) are listed under one
+// header that folds them away and shows or hides all of them at once; the
+// header's eye is on while any member is visible. `groups` optionally names
+// them and sets which start folded: [{ id, name?, collapsed? }].
 // exposure (EV) and offset are a per-layer grade for renderers that window a
 // layer themselves: the host maps them onto the layer (0 is neutral, and a
 // double-click on either slider resets it).
-// options: { controls, list, layers, selected, colormaps, blendings, exposureRange,
+// options: { controls, list, layers, groups, selected, colormaps, blendings, exposureRange,
 //            contrastCommit: "input" | "change", autoContrast: "none" | "once" | "both",
 //            onChange(id, patch), onSelect(id), onAutoContrast(id) -> [low, high] | Promise }
 // With contrastCommit "change", contrast is committed on release, for
@@ -240,6 +246,8 @@ export function layerPanel(options) {
   let layers = (opts.layers || []).map((layer) => ({ ...layer }));
   let selected = opts.selected ?? layers.at(-1)?.id ?? null;
   const continuous = new Set();
+  const groupInfo = new Map((opts.groups || []).map((group) => [group.id, group]));
+  const collapsed = new Set((opts.groups || []).filter((group) => group.collapsed).map((group) => group.id));
 
   const opacity = el("input", { class: "sc-slider", type: "range", min: 0, max: 1, step: 0.01, "aria-label": "Opacity" });
   const opacityValue = el("span", { class: "sc-value" });
@@ -292,8 +300,46 @@ export function layerPanel(options) {
     opts.onChange?.(id, patch);
   }
 
+  function groupHeader(id, members) {
+    const shown = members.filter((layer) => layer.visible !== false).length;
+    const folded = collapsed.has(id), name = groupInfo.get(id)?.name ?? id;
+    const eye = el("button", { class: "sc-eye", type: "button", "aria-pressed": String(shown > 0),
+      "aria-label": `${shown ? "Hide" : "Show"} all of ${name}` });
+    eye.innerHTML = EYE;
+    eye.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const visible = shown === 0;
+      for (const layer of members) if ((layer.visible !== false) !== visible) emit(layer.id, { visible });
+      renderList();
+    });
+    const toggle = () => { if (folded) collapsed.delete(id); else collapsed.add(id); renderList(); };
+    const header = el("div", { class: "sc-group", role: "button", tabindex: 0, "aria-expanded": String(!folded),
+      "data-hidden": String(shown === 0) },
+      el("span", { class: "sc-caret", "aria-hidden": "true", text: folded ? "▸" : "▾" }), eye,
+      el("span", { class: "sc-name", text: name }),
+      el("span", { class: "sc-count", text: `${shown}/${members.length}` }));
+    header.addEventListener("click", toggle);
+    header.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggle(); } });
+    return header;
+  }
+
+  // Top row first; a group's header goes where its first listed member would.
   function renderList() {
-    list.replaceChildren(...[...layers].reverse().map((layer) => {
+    const rows = [], headed = new Set();
+    for (const layer of [...layers].reverse()) {
+      const group = layer.group;
+      if (group != null && !headed.has(group)) {
+        headed.add(group);
+        rows.push(groupHeader(group, layers.filter((item) => item.group === group)));
+      }
+      if (group != null && collapsed.has(group)) continue;
+      rows.push(layerRow(layer));
+    }
+    list.replaceChildren(...rows);
+  }
+
+  function layerRow(layer) {
+    {
       const isSelected = layer.id === selected;
       const eye = el("button", { class: "sc-eye", type: "button", "aria-pressed": String(layer.visible !== false),
         "aria-label": `${layer.visible !== false ? "Hide" : "Show"} ${layer.name}` });
@@ -310,8 +356,9 @@ export function layerPanel(options) {
       const choose = () => { const changed = selected !== layer.id; selected = layer.id; renderList(); renderControls(); if (changed) opts.onSelect?.(selected); };
       item.addEventListener("click", choose);
       item.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); choose(); } });
+      if (layer.group != null) item.dataset.grouped = "true";
       return item;
-    }));
+    }
   }
 
   function fillSelect(select, values, currentValue, label = (v) => v) {

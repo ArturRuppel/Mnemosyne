@@ -80,9 +80,9 @@ def generate_explorers(root, catalog_out=None, plugins=None):
 
     Explorers are linked from the experiment catalog and the report tables, not
     from a page of their own. The server mounts ``ROOT/explorers`` directly; an
-    export to a directory outside ``ROOT/catalog`` gets the whole tree (bundles
-    and the ``_shared`` viewer), because Luxar loads hashed JS/WASM and Zarr
-    chunks dynamically and an HTML-reference scraper cannot discover those files.
+    export to a directory outside ``ROOT/catalog`` gets the whole tree, because a
+    viewer names its images and data in a script manifest that an HTML-reference
+    scraper cannot follow.
     """
     root = Path(root)
     catalog_dir = Path(catalog_out) if catalog_out else root / "catalog"
