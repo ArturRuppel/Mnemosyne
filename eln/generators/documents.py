@@ -50,7 +50,14 @@ def _document_card(doc_file, root, code_index=None):
     title_match = re.search(r"^# (.+)$", content, re.MULTILINE)
     title = (title_match.group(1).strip() if title_match
              else doc_file.stem.replace("_", " ").replace("-", " ").title())
-    slug = doc_file.stem
+    # The slug becomes a DOM id, so it has to be unique across the whole page.
+    # The filename stem alone is not: the convention is one folder per document
+    # holding a REPORT.md, so every such document collided on id="report-REPORT"
+    # and toggleReport() -- getElementById -- only ever reached the first card.
+    # Qualify with the containing folder, which IS the document's identity.
+    slug = re.sub(r"[^A-Za-z0-9_-]", "-",
+                  f"{doc_dir.name}-{doc_file.stem}" if doc_dir != Path(".")
+                  else doc_file.stem)
     doc_date = extract_report_date(content, doc_file)
 
     # Notebook documents carry a hidden full-notebook "Code" view + a toggle, just
