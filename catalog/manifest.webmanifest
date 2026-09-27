@@ -1,6 +1,6 @@
 {
-  "name": "Mnemosyne",
-  "short_name": "Mnemosyne",
+  "name": "Lab Notebook",
+  "short_name": "Lab Notebook",
   "description": "Mnemosyne, the electronic lab notebook — local admin view.",
   "start_url": "/",
   "scope": "/",

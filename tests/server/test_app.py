@@ -556,7 +556,7 @@ def test_sdgl_page_carries_inline_header_logo(client):
     # page-specific name as a subtitle.
     html = client.get("/sdgl.html").get_data(as_text=True)
     assert 'viewBox="0 0 100 100"' in html
-    assert "<h1>Mnemosyne</h1>" in html
+    assert "<h1>Electronic Lab Notebook</h1>" in html
     assert ">Data Explorer</p>" in html
 
 

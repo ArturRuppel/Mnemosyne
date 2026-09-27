@@ -330,7 +330,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="header">
         <div style="display: flex; align-items: center; gap: 0.8rem;">
             <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
-            <h1>Mnemosyne</h1>
+            <h1>Electronic Lab Notebook</h1>
         </div>
         <p style="margin-left: calc(34px + 0.8rem);">Experiment Catalog</p>
     </div>
