@@ -97,33 +97,33 @@ def generate_presentations(root, catalog_out=None):
     <title>Presentations</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #27313a; background: #eef1f4; }}
-        .header {{ background: #263646; color: white; padding: 1.25rem 1.5rem; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #262033; background: #f1eff5; }}
+        .header {{ background: #2d1f4e; color: white; padding: 1.25rem 1.5rem; }}
         .header h1 {{ font-size: 1.55rem; margin-bottom: 0.25rem; }}
-        .header p {{ color: #d7e0e7; }}
-        .nav {{ display: flex; flex-wrap: wrap; gap: 1rem; background: white; padding: 0.8rem 1.5rem; border-bottom: 1px solid #d7dde2; }}
-        .nav a {{ color: #286b9f; text-decoration: none; font-weight: 650; }}
+        .header p {{ color: #ddd3ee; }}
+        .nav {{ display: flex; flex-wrap: wrap; gap: 1rem; background: white; padding: 0.8rem 1.5rem; border-bottom: 1px solid #dcd8e3; }}
+        .nav a {{ color: #0f766e; text-decoration: none; font-weight: 650; }}
         .nav a:hover {{ text-decoration: underline; }}
         .container {{ max-width: 1400px; margin: 0 auto; padding: 1.5rem; }}
         .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }}
-        .stat-card {{ background: white; padding: 1rem 1.25rem; border: 1px solid #d7dde2; border-radius: 8px; }}
-        .stat-card .number {{ font-size: 1.5rem; font-weight: 700; color: #2d6f9f; }}
-        .stat-card .label {{ color: #6a7884; margin-top: 0.25rem; font-size: 0.85rem; }}
-        .table-container {{ background: white; border: 1px solid #d7dde2; border-radius: 8px; overflow-x: auto; }}
+        .stat-card {{ background: white; padding: 1rem 1.25rem; border: 1px solid #dcd8e3; border-radius: 8px; }}
+        .stat-card .number {{ font-size: 1.5rem; font-weight: 700; color: #6b3fa0; }}
+        .stat-card .label {{ color: #6c6680; margin-top: 0.25rem; font-size: 0.85rem; }}
+        .table-container {{ background: white; border: 1px solid #dcd8e3; border-radius: 8px; overflow-x: auto; }}
         table {{ width: 100%; border-collapse: collapse; font-size: 0.92rem; }}
-        th {{ background: #f3f6f8; color: #53616d; padding: 0.65rem; text-align: left; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid #e0e5e9; }}
-        td {{ padding: 0.65rem; border-bottom: 1px solid #e0e5e9; vertical-align: top; }}
-        tr:hover {{ background: #f9fbfc; }}
-        .presentation-link {{ color: #286b9f; text-decoration: none; font-weight: 600; }}
+        th {{ background: #f4f2f7; color: #564f66; padding: 0.65rem; text-align: left; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid #e4e0ea; }}
+        td {{ padding: 0.65rem; border-bottom: 1px solid #e4e0ea; vertical-align: top; }}
+        tr:hover {{ background: #faf9fc; }}
+        .presentation-link {{ color: #0f766e; text-decoration: none; font-weight: 600; }}
         .presentation-link:hover {{ text-decoration: underline; }}
-        .footer {{ text-align: center; padding: 1.5rem; color: #6a7884; font-size: 0.85rem; margin-top: 2rem; }}
+        .footer {{ text-align: center; padding: 1.5rem; color: #6c6680; font-size: 0.85rem; margin-top: 2rem; }}
     </style>
 </head>
 <body>
     <script src="auth.js"></script>
     <div class="header">
         <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#eef1f4"></path><g stroke="#6aa8d8" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#5cc9bb" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
             <h1>Mnemosyne</h1>
         </div>
         <p style="margin-left: calc(34px + 0.8rem);">Presentations</p>

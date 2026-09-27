@@ -6,7 +6,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: #263646;
+    background: #2d1f4e;
     color: white;
     padding: 0.7rem 1.5rem;
     display: flex;
@@ -60,24 +60,24 @@
 }
 
 .eln-toolbar-btn.add {
-    background: #286b9f;
+    background: #0f766e;
 }
 
 .eln-toolbar-btn.add:hover {
-    background: #2f7cb6;
+    background: #115e59;
 }
 
 .eln-toolbar-btn.publish {
-    background: #27735f;
+    background: #6b3fa0;
     color: white;
 }
 
 .eln-toolbar-btn.publish:hover {
-    background: #2f8a72;
+    background: #5a3389;
 }
 
 .eln-toolbar-btn.publish:disabled {
-    background: #46555f;
+    background: #483f59;
     cursor: not-allowed;
     transform: none;
 }
@@ -85,7 +85,7 @@
 /* Inline edit buttons (per card / row) */
 .eln-edit-btn {
     padding: 0.28rem 0.7rem;
-    background: #286b9f;
+    background: #0f766e;
     color: white;
     border: none;
     border-radius: 6px;
@@ -99,7 +99,7 @@
 }
 
 .eln-edit-btn:hover {
-    background: #2f7cb6;
+    background: #115e59;
     color: white;
 }
 
@@ -121,13 +121,13 @@
    doesn't read as two equally primary actions. */
 .eln-edit-btn.secondary {
     background: transparent;
-    color: #286b9f;
-    box-shadow: inset 0 0 0 1px #9dbdd6;
+    color: #0f766e;
+    box-shadow: inset 0 0 0 1px #9dd3c9;
 }
 
 .eln-edit-btn.secondary:hover {
-    background: #eaf2f8;
-    color: #1f567f;
+    background: #e6f4f1;
+    color: #134e4a;
 }
 
 /* Tight right-side cluster for a card header: version pill + Edit/Export. */
@@ -140,8 +140,8 @@
 
 /* Small "latest version" pill shown in a report header (mirrors .latest-badge). */
 .eln-version-pill {
-    background: #e5edf4;
-    color: #2b5878;
+    background: #dff3ef;
+    color: #115e59;
     padding: 0.15rem 0.55rem;
     border-radius: 999px;
     font-size: 0.8rem;
@@ -185,7 +185,7 @@ body.eln-editing {
 }
 
 .eln-toast.info {
-    background: #286b9f;
+    background: #0f766e;
 }
 
 /* ==================== inline form modal ==================== */
@@ -242,7 +242,7 @@ body.eln-editing {
 .eln-form-modal-body input,
 .eln-form-modal-body select,
 .eln-form-modal-body textarea {
-    padding: 0.75rem; border: 1px solid #b8c3cc; border-radius: 6px;
+    padding: 0.75rem; border: 1px solid #bfb8ca; border-radius: 6px;
     font-size: 0.95rem; font-family: inherit;
 }
 .eln-form-modal-body textarea {
@@ -251,10 +251,10 @@ body.eln-editing {
 }
 .eln-form-modal-body textarea.large { min-height: 300px; }
 .eln-form-modal-body .button {
-    padding: 0.75rem 1.5rem; background: #2d6f9f; color: white; border: none;
+    padding: 0.75rem 1.5rem; background: #6b3fa0; color: white; border: none;
     border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer;
 }
-.eln-form-modal-body .button:hover { background: #255d85; }
+.eln-form-modal-body .button:hover { background: #115e59; }
 .eln-form-modal-body .button.secondary { background: #6c757d; }
 .eln-form-modal-body .button.secondary:hover { background: #5a6268; }
 .eln-form-modal-body .button-group { display: flex; gap: 1rem; margin-top: 1.5rem; }
@@ -266,21 +266,21 @@ body.eln-editing {
 .eln-form-modal-body .channel-row .channel-modality { flex: 1 1 auto; margin: 0; }
 .eln-form-modal-body .protocol-checkbox-item {
     display: flex; align-items: center; padding: 0.5rem; margin-bottom: 0.25rem;
-    background: #f7f9fb; border-radius: 4px;
+    background: #f8f7fa; border-radius: 4px;
 }
 .eln-form-modal-body .protocol-checkbox-item input[type="checkbox"] { margin-right: 0.5rem; width: auto; }
 .eln-form-modal-body .protocol-checkbox-item label { margin: 0; cursor: pointer; flex: 1; }
 .eln-form-modal-body .tag-input {
     display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
-    border: 1px solid #b8c3cc; border-radius: 6px; padding: 0.5rem; background: white;
+    border: 1px solid #bfb8ca; border-radius: 6px; padding: 0.5rem; background: white;
 }
 .eln-form-modal-body .tag-input input { flex: 1; min-width: 8rem; border: none; outline: none; padding: 0.25rem; }
 .eln-form-modal-body .tag-chip {
     display: inline-flex; align-items: center; gap: 0.35rem; border-radius: 999px;
-    background: #e5edf4; color: #2b5878; font-size: 0.85rem; font-weight: 600; padding: 0.15rem 0.6rem;
+    background: #dff3ef; color: #115e59; font-size: 0.85rem; font-weight: 600; padding: 0.15rem 0.6rem;
 }
 .eln-form-modal-body .tag-chip button {
-    border: none; background: none; color: #2b5878; cursor: pointer;
+    border: none; background: none; color: #115e59; cursor: pointer;
     font-size: 1rem; line-height: 1; padding: 0;
 }
 .eln-form-modal-body .hidden { display: none; }
@@ -288,15 +288,15 @@ body.eln-editing {
 /* Report version selector — lives inside the card body, so it only shows once
    the card is expanded (mirrors the protocols' .version-selector). */
 .eln-version {
-    margin: 0 0 1rem; font-size: 0.9rem; color: #53616d;
+    margin: 0 0 1rem; font-size: 0.9rem; color: #564f66;
     display: flex; gap: 0.5rem; align-items: center;
 }
 .eln-version label { font-weight: 600; }
 .eln-version-select {
-    padding: 0.4rem 0.6rem; border: 1px solid #b8c3cc;
+    padding: 0.4rem 0.6rem; border: 1px solid #bfb8ca;
     border-radius: 6px; font-size: 0.9rem;
 }
 .eln-version-pre {
-    white-space: pre-wrap; background: #f6f8fa; padding: 1rem;
+    white-space: pre-wrap; background: #f6f4f8; padding: 1rem;
     border-radius: 6px; overflow: auto;
 }

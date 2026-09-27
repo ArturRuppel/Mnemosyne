@@ -9,35 +9,35 @@
         body {
             min-height: 100vh;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: #27313a;
-            background: #eef1f4;
+            color: #262033;
+            background: #f1eff5;
         }
-        .header { background: #263646; color: white; padding: 1.25rem 1.5rem; line-height: 1.6; }
+        .header { background: #2d1f4e; color: white; padding: 1.25rem 1.5rem; line-height: 1.6; }
         .header h1 { font-size: 1.55rem; margin-bottom: 0.25rem; }
-        .header p { color: #d7e0e7; }
+        .header p { color: #ddd3ee; }
         .nav {
             display: flex; flex-wrap: wrap; gap: 1rem; background: white;
-            padding: 0.8rem 1.5rem; border-bottom: 1px solid #d7dde2;
+            padding: 0.8rem 1.5rem; border-bottom: 1px solid #dcd8e3;
         }
-        .nav a { color: #286b9f; font-weight: 650; text-decoration: none; }
+        .nav a { color: #0f766e; font-weight: 650; text-decoration: none; }
         .shell {
             display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 1rem;
             min-height: calc(100vh - 134px); padding: 1rem;
         }
-        .panel { background: white; border: 1px solid #d7dde2; border-radius: 8px; min-width: 0; }
+        .panel { background: white; border: 1px solid #dcd8e3; border-radius: 8px; min-width: 0; }
         .toolbar {
             display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-            gap: 0.75rem; padding: 0.75rem; border-bottom: 1px solid #d7dde2;
+            gap: 0.75rem; padding: 0.75rem; border-bottom: 1px solid #dcd8e3;
         }
         button {
-            border: 1px solid #b8c3cc; border-radius: 6px; background: #f7f9fa; color: #24313d;
+            border: 1px solid #bfb8ca; border-radius: 6px; background: #f8f7fa; color: #231d33;
             cursor: pointer; font: inherit; font-weight: 650; min-height: 2.1rem; padding: 0.4rem 0.75rem;
         }
-        button:hover { background: #e9eef2; }
-        button.active { border-color: #2d6f9f; background: #2d6f9f; color: white; }
-        button.primary { border-color: #27735f; background: #2d806a; color: white; }
+        button:hover { background: #ebe8f0; }
+        button.active { border-color: #6b3fa0; background: #6b3fa0; color: white; }
+        button.primary { border-color: #115e59; background: #0f766e; color: white; }
         input[type="search"] {
-            width: min(100%, 22rem); border: 1px solid #b8c3cc; border-radius: 6px;
+            width: min(100%, 22rem); border: 1px solid #bfb8ca; border-radius: 6px;
             padding: 0.5rem 0.65rem; font: inherit;
         }
         .view { display: none; height: calc(100vh - 203px); min-height: 520px; overflow: auto; }
@@ -57,11 +57,11 @@
             display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem;
             border-radius: 6px; cursor: pointer; user-select: none;
         }
-        .row:hover { background: #f1f5f8; }
-        .row.selected { background: #e3eef6; outline: 1px solid #9cc1dd; }
+        .row:hover { background: #f3f1f7; }
+        .row.selected { background: #e0f2ef; outline: 1px solid #8fd0c5; }
         .row.dimmed { opacity: 0.32; }
         .twisty {
-            flex: 0 0 1.1rem; text-align: center; color: #6a7884; font-size: 0.8rem;
+            flex: 0 0 1.1rem; text-align: center; color: #6c6680; font-size: 0.8rem;
             transition: transform 0.12s ease;
         }
         .twisty.spacer { visibility: hidden; }
@@ -70,15 +70,15 @@
         .row-label { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .row-id {
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            color: #2b5878; font-weight: 700;
+            color: #115e59; font-weight: 700;
         }
-        .row-meta { color: #6a7884; font-weight: 400; font-size: 0.85rem; }
+        .row-meta { color: #6c6680; font-weight: 400; font-size: 0.85rem; }
         .badge {
-            margin-left: auto; flex: 0 0 auto; background: #e5edf4; color: #2b5878;
+            margin-left: auto; flex: 0 0 auto; background: #dff3ef; color: #115e59;
             border-radius: 999px; font-size: 0.75rem; font-weight: 700; padding: 0.05rem 0.45rem;
         }
         .badge.warn { background: #f6e7c8; color: #8a6320; }
-        .badge.muted { background: #eceff2; color: #6a7884; }
+        .badge.muted { background: #edeaf1; color: #6c6680; }
         .badge.derived { background: #ece3f6; color: #6b3fae; }
         .badge.curated { background: #f6ead8; color: #9a6516; }
         /* A committed (stamped) artifact: distinct from raw scanned files. */
@@ -87,10 +87,10 @@
         .prov-status.ok { color: #27735f; }
         .prov-status.modified { color: #8a6320; }
         .prov-status.missing { color: #8a3b3b; }
-        .children { margin-left: 1.1rem; border-left: 1px solid #e6ebef; padding-left: 0.25rem; }
+        .children { margin-left: 1.1rem; border-left: 1px solid #e8e4ed; padding-left: 0.25rem; }
         .hidden { display: none; }
         .tag-chip {
-            display: inline-block; border-radius: 999px; background: #e5edf4; color: #2b5878;
+            display: inline-block; border-radius: 999px; background: #dff3ef; color: #115e59;
             font-size: 0.72rem; font-weight: 600; padding: 0.02rem 0.45rem; margin-left: 0.25rem;
         }
         .entry-icon { flex: 0 0 1rem; text-align: center; }
@@ -99,17 +99,17 @@
         .detail { padding: 1rem; overflow: auto; max-height: calc(100vh - 134px); }
         .detail h2 { font-size: 1.2rem; margin-bottom: 0.35rem; overflow-wrap: anywhere; }
         .detail-section { margin-top: 1rem; }
-        .detail-section h3 { color: #53616d; font-size: 0.82rem; margin-bottom: 0.5rem; text-transform: uppercase; }
+        .detail-section h3 { color: #564f66; font-size: 0.82rem; margin-bottom: 0.5rem; text-transform: uppercase; }
         .kv { display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: 0.35rem 0.6rem; font-size: 0.92rem; }
-        .kv dt { color: #667582; font-weight: 650; }
+        .kv dt { color: #686179; font-weight: 650; }
         .kv dd { min-width: 0; overflow-wrap: anywhere; }
         .list { display: grid; gap: 0.5rem; }
-        .list-item { border: 1px solid #d7dde2; border-radius: 6px; padding: 0.6rem; overflow-wrap: anywhere; }
+        .list-item { border: 1px solid #dcd8e3; border-radius: 6px; padding: 0.6rem; overflow-wrap: anywhere; }
         .list-item.stale { border-color: #e0c187; background: #fdf7ec; }
-        .muted { color: #6a7884; }
-        .empty { color: #6a7884; padding: 1rem; }
-        .status { color: #53616d; font-size: 0.9rem; padding: 1rem; }
-        a.xlink { color: #286b9f; font-weight: 650; text-decoration: none; }
+        .muted { color: #6c6680; }
+        .empty { color: #6c6680; padding: 1rem; }
+        .status { color: #564f66; font-size: 0.9rem; padding: 1rem; }
+        a.xlink { color: #0f766e; font-weight: 650; text-decoration: none; }
         @media (max-width: 980px) {
             .shell { grid-template-columns: 1fr; }
             .view { height: 60vh; }
@@ -121,7 +121,7 @@
     <script src="auth.js"></script>
     <header class="header">
         <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#eef1f4"></path><g stroke="#6aa8d8" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#5cc9bb" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
             <h1>Mnemosyne</h1>
         </div>
         <p style="margin-left: calc(34px + 0.8rem);">Data Explorer</p>
@@ -422,7 +422,7 @@
             
             // Default link handling for protocols, presentations, etc.
             const row = makeRow({
-                twisty: false, color: TYPE_COLORS[link.type] || '#6b7780', icon: '🔗',
+                twisty: false, color: TYPE_COLORS[link.type] || '#6c6680', icon: '🔗',
                 label: `${escapeHtml(link.title || link.node_id)}`,
                 meta: `${link.type} · ${link.relation}`
             });

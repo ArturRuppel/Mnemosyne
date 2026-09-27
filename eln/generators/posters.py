@@ -281,37 +281,37 @@ def generate_posters(root, catalog_out=None):
     <title>Posters</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #27313a; background: #eef1f4; }}
-        .header {{ background: #263646; color: white; padding: 1.25rem 1.5rem; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #262033; background: #f1eff5; }}
+        .header {{ background: #2d1f4e; color: white; padding: 1.25rem 1.5rem; }}
         .header h1 {{ font-size: 1.55rem; margin-bottom: 0.25rem; }}
-        .header p {{ color: #d7e0e7; }}
-        .nav {{ display: flex; flex-wrap: wrap; gap: 1rem; background: white; padding: 0.8rem 1.5rem; border-bottom: 1px solid #d7dde2; }}
-        .nav a {{ color: #286b9f; text-decoration: none; font-weight: 650; }}
+        .header p {{ color: #ddd3ee; }}
+        .nav {{ display: flex; flex-wrap: wrap; gap: 1rem; background: white; padding: 0.8rem 1.5rem; border-bottom: 1px solid #dcd8e3; }}
+        .nav a {{ color: #0f766e; text-decoration: none; font-weight: 650; }}
         .nav a:hover {{ text-decoration: underline; }}
         .container {{ max-width: 1400px; margin: 0 auto; padding: 1.5rem; }}
         .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }}
-        .stat-card {{ background: white; padding: 1rem 1.25rem; border: 1px solid #d7dde2; border-radius: 8px; }}
-        .stat-card .number {{ font-size: 1.5rem; font-weight: 700; color: #2d6f9f; }}
-        .stat-card .label {{ color: #6a7884; margin-top: 0.25rem; font-size: 0.85rem; }}
+        .stat-card {{ background: white; padding: 1rem 1.25rem; border: 1px solid #dcd8e3; border-radius: 8px; }}
+        .stat-card .number {{ font-size: 1.5rem; font-weight: 700; color: #6b3fa0; }}
+        .stat-card .label {{ color: #6c6680; margin-top: 0.25rem; font-size: 0.85rem; }}
         .poster-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; }}
-        .poster-card {{ background: white; border: 1px solid #d7dde2; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }}
-        .poster-open {{ display: block; background: #f3f6f8; cursor: zoom-in; }}
+        .poster-card {{ background: white; border: 1px solid #dcd8e3; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }}
+        .poster-open {{ display: block; background: #f4f2f7; cursor: zoom-in; }}
         .poster-img {{ display: block; width: 100%; height: 260px; object-fit: contain; background: white; }}
         .poster-missing {{ height: 260px; display: flex; align-items: center; justify-content: center; color: #b04a4a; background: #fbf3f3; font-size: 0.9rem; }}
-        .poster-title {{ padding: 0.75rem 1rem; font-weight: 600; border-top: 1px solid #e0e5e9; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }}
-        .empty {{ background: white; border: 1px dashed #c3ccd3; border-radius: 8px; padding: 2.5rem; text-align: center; color: #6a7884; }}
-        .empty code {{ background: #eef1f4; padding: 0.1rem 0.35rem; border-radius: 4px; }}
-        .footer {{ text-align: center; padding: 1.5rem; color: #6a7884; font-size: 0.85rem; margin-top: 2rem; }}
+        .poster-title {{ padding: 0.75rem 1rem; font-weight: 600; border-top: 1px solid #e4e0ea; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }}
+        .empty {{ background: white; border: 1px dashed #c8c2cf; border-radius: 8px; padding: 2.5rem; text-align: center; color: #6c6680; }}
+        .empty code {{ background: #f1eff5; padding: 0.1rem 0.35rem; border-radius: 4px; }}
+        .footer {{ text-align: center; padding: 1.5rem; color: #6c6680; font-size: 0.85rem; margin-top: 2rem; }}
         .poster-modal {{ position: fixed; inset: 0; z-index: 10001; }}
         .poster-modal[hidden] {{ display: none; }}
-        .poster-modal-stage {{ position: absolute; inset: 0; overflow: hidden; background: rgba(18, 25, 34, 0.94); cursor: grab; touch-action: none; }}
+        .poster-modal-stage {{ position: absolute; inset: 0; overflow: hidden; background: rgba(22, 16, 32, 0.94); cursor: grab; touch-action: none; }}
         .poster-modal-stage.grabbing {{ cursor: grabbing; }}
         .poster-modal-paper {{ position: absolute; top: 0; left: 0; transform-origin: 0 0; background: white; box-shadow: 0 6px 30px rgba(0, 0, 0, 0.45); }}
         .poster-modal-img {{ display: block; max-width: 92vw; max-height: 86vh; user-select: none; -webkit-user-drag: none; }}
         .poster-modal-bar {{ position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.7rem 1rem; color: white; pointer-events: none; background: linear-gradient(rgba(18, 25, 34, 0.78), rgba(18, 25, 34, 0)); }}
         .poster-modal-title {{ font-weight: 650; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); }}
         .poster-modal-actions {{ display: flex; align-items: center; gap: 1rem; }}
-        .poster-modal-hint {{ font-size: 0.8rem; color: #cdd6de; }}
+        .poster-modal-hint {{ font-size: 0.8rem; color: #d2ccdb; }}
         .poster-modal-close {{ pointer-events: auto; background: rgba(0, 0, 0, 0.4); border: none; color: white; width: 2rem; height: 2rem; border-radius: 50%; font-size: 1.4rem; line-height: 1; cursor: pointer; }}
         .poster-modal-close:hover {{ background: rgba(0, 0, 0, 0.6); }}
     </style>
@@ -320,7 +320,7 @@ def generate_posters(root, catalog_out=None):
     <script src="auth.js"></script>
     <div class="header">
         <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#eef1f4"></path><g stroke="#6aa8d8" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#5cc9bb" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
             <h1>Mnemosyne</h1>
         </div>
         <p style="margin-left: calc(34px + 0.8rem);">Posters</p>

@@ -112,11 +112,11 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            color: #27313a;
-            background: #eef1f4;
+            color: #262033;
+            background: #f1eff5;
         }}
         .header {{
-            background: #263646;
+            background: #2d1f4e;
             color: white;
             padding: 1.25rem 1.5rem;
         }}
@@ -125,7 +125,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 0.25rem;
         }}
         .header p {{
-            color: #d7e0e7;
+            color: #ddd3ee;
         }}
         .nav {{
             display: flex;
@@ -133,10 +133,10 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             gap: 1rem;
             background: white;
             padding: 0.8rem 1.5rem;
-            border-bottom: 1px solid #d7dde2;
+            border-bottom: 1px solid #dcd8e3;
         }}
         .nav a {{
-            color: #286b9f;
+            color: #0f766e;
             text-decoration: none;
             font-weight: 650;
         }}
@@ -155,7 +155,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         .protocol-group {{
             background: white;
-            border: 1px solid #d7dde2;
+            border: 1px solid #dcd8e3;
             border-radius: 8px;
             margin-bottom: 1rem;
             overflow: hidden;
@@ -169,7 +169,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             transition: background-color 0.2s;
         }}
         .protocol-header:hover {{
-            background-color: #f3f6f8;
+            background-color: #f4f2f7;
         }}
         /* Single-protocol export: header is non-interactive, body always open. */
         .protocol-header.standalone {{
@@ -181,7 +181,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
         .protocol-name {{
             font-size: 1.15rem;
             font-weight: 650;
-            color: #24313d;
+            color: #231d33;
             display: flex;
             align-items: center;
             gap: 1rem;
@@ -191,12 +191,12 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-right: 0.75rem;
             font-size: 1rem;
             transition: transform 0.2s;
-            color: #286b9f;
+            color: #0f766e;
         }}
         .protocol-details {{
             display: none;
             padding: 1rem 1.5rem 1.5rem 1.5rem;
-            border-top: 1px solid #e0e5e9;
+            border-top: 1px solid #e4e0ea;
             margin: 0 1rem;
         }}
         .latest-badge {{
@@ -208,7 +208,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             font-weight: 700;
         }}
         .protocol-description {{
-            color: #6a7884;
+            color: #6c6680;
             margin-bottom: 1rem;
             font-size: 1rem;
         }}
@@ -221,7 +221,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         .version-selector select {{
             padding: 0.5rem 0.65rem;
-            border: 1px solid #b8c3cc;
+            border: 1px solid #bfb8ca;
             border-radius: 6px;
             font-size: 0.95rem;
         }}
@@ -233,19 +233,19 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             font-size: 1.8rem;
             margin-top: 1.5rem;
             margin-bottom: 1rem;
-            color: #24313d;
+            color: #231d33;
         }}
         .protocol-content h2 {{
             font-size: 1.5rem;
             margin-top: 1.5rem;
             margin-bottom: 0.75rem;
-            color: #53616d;
+            color: #564f66;
         }}
         .protocol-content h3 {{
             font-size: 1.2rem;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
-            color: #53616d;
+            color: #564f66;
         }}
         .protocol-content ul {{
             margin: 0.5rem 0 0.5rem 2rem;
@@ -254,10 +254,10 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 0.25rem;
         }}
         .protocol-content blockquote {{
-            border-left: 3px solid #2d6f9f;
+            border-left: 3px solid #6b3fa0;
             padding-left: 1rem;
             margin: 1rem 0;
-            color: #53616d;
+            color: #564f66;
             background: white;
             padding: 0.5rem 1rem;
             border-radius: 4px;
@@ -271,7 +271,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             gap: 2rem;
             margin-top: 1rem;
             font-size: 0.9rem;
-            color: #6a7884;
+            color: #6c6680;
         }}
         .protocol-meta .label {{
             font-weight: 600;
@@ -279,12 +279,12 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
         .no-protocols {{
             text-align: center;
             padding: 3rem;
-            color: #6a7884;
+            color: #6c6680;
         }}
         .footer {{
             text-align: center;
             padding: 1.5rem;
-            color: #6a7884;
+            color: #6c6680;
             font-size: 0.85rem;
             margin-top: 2rem;
         }}
@@ -294,7 +294,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
     <script src="auth.js"></script>
     <div class="header">
         <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#eef1f4"></path><g stroke="#6aa8d8" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#5cc9bb" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
             <h1>Mnemosyne</h1>
         </div>
         <p style="margin-left: calc(34px + 0.8rem);">Protocols</p>

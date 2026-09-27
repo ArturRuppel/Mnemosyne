@@ -16,23 +16,23 @@
         body {
             display: flex; flex-direction: column;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #eef1f4;
+            background: #f1eff5;
         }
         .tab-strip {
-            display: flex; align-items: flex-end; gap: 0.25rem; background: #263646;
+            display: flex; align-items: flex-end; gap: 0.25rem; background: #2d1f4e;
             overflow-x: auto; flex: 0 0 auto; padding: 0.5rem 0.5rem 0;
         }
         .tab {
             display: flex; align-items: center; gap: 0.5rem;
             padding: 0.55rem 0.5rem 0.55rem 0.9rem;
-            color: #d7e0e7; opacity: 0.7; cursor: pointer; white-space: nowrap;
+            color: #ddd3ee; opacity: 0.7; cursor: pointer; white-space: nowrap;
             max-width: 16rem; flex: 0 0 auto; border-radius: 8px 8px 0 0;
             transition: background 0.12s ease, opacity 0.12s ease;
         }
-        .tab:hover { background: #324a60; opacity: 1; }
+        .tab:hover { background: #3e2d66; opacity: 1; }
         .tab.active {
-            background: #eef1f4; color: #27313a; opacity: 1; font-weight: 650;
-            box-shadow: inset 0 2px 0 #2d6f9f;
+            background: #f1eff5; color: #262033; opacity: 1; font-weight: 650;
+            box-shadow: inset 0 2px 0 #6b3fa0;
         }
         .tab-title { overflow: hidden; text-overflow: ellipsis; }
         .tab-close {
@@ -40,14 +40,14 @@
             line-height: 1; cursor: pointer; padding: 0.15rem 0.4rem; border-radius: 999px;
         }
         .tab-close:hover { background: rgba(255, 255, 255, 0.18); }
-        .tab.active .tab-close:hover { background: #e3eef6; }
+        .tab.active .tab-close:hover { background: #e0f2ef; }
         .tab-new {
             flex: 0 0 auto; align-self: center; border: none; background: transparent;
-            color: #d7e0e7; opacity: 0.7; font-size: 1.1rem; padding: 0.5rem 0.75rem;
+            color: #ddd3ee; opacity: 0.7; font-size: 1.1rem; padding: 0.5rem 0.75rem;
             cursor: pointer; border-radius: 6px; transition: background 0.12s ease, opacity 0.12s ease;
         }
-        .tab-new:hover { background: #324a60; opacity: 1; }
-        .iframe-stack { flex: 1 1 auto; position: relative; background: #eef1f4; }
+        .tab-new:hover { background: #3e2d66; opacity: 1; }
+        .iframe-stack { flex: 1 1 auto; position: relative; background: #f1eff5; }
         .iframe-stack iframe {
             position: absolute; inset: 0; width: 100%; height: 100%; border: none;
         }
