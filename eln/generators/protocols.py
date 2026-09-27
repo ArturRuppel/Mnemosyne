@@ -116,7 +116,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             background: #f1eff5;
         }}
         .header {{
-            background: #2d1f4e;
+            background: #0f3d3a;
             color: white;
             padding: 1.25rem 1.5rem;
         }}
@@ -125,7 +125,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 0.25rem;
         }}
         .header p {{
-            color: #ddd3ee;
+            color: #cfe9e5;
         }}
         .nav {{
             display: flex;
@@ -136,7 +136,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             border-bottom: 1px solid #dcd8e3;
         }}
         .nav a {{
-            color: #0f766e;
+            color: #6b3fa0;
             text-decoration: none;
             font-weight: 650;
         }}
@@ -191,7 +191,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-right: 0.75rem;
             font-size: 1rem;
             transition: transform 0.2s;
-            color: #0f766e;
+            color: #6b3fa0;
         }}
         .protocol-details {{
             display: none;
@@ -254,7 +254,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 0.25rem;
         }}
         .protocol-content blockquote {{
-            border-left: 3px solid #6b3fa0;
+            border-left: 3px solid #0f766e;
             padding-left: 1rem;
             margin: 1rem 0;
             color: #564f66;
@@ -294,7 +294,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
     <script src="auth.js"></script>
     <div class="header">
         <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#5cc9bb" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
             <h1>Mnemosyne</h1>
         </div>
         <p style="margin-left: calc(34px + 0.8rem);">Protocols</p>

@@ -104,7 +104,7 @@ def _code_css():
         .code-sidebar .code-grp { font-weight: 700; color: #262033; margin: 0.6rem 0 0.2rem;
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
         .code-sidebar ul { list-style: none; margin: 0 0 0.2rem; padding-left: 0.6rem; }
-        .code-sidebar a { color: #0f766e; text-decoration: none; }
+        .code-sidebar a { color: #6b3fa0; text-decoration: none; }
         .code-sidebar a:hover { text-decoration: underline; }
         .code-sidebar .code-syms a { color: #5d5670; font-family: ui-monospace, monospace;
             font-size: 0.8rem; }

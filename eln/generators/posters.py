@@ -282,16 +282,16 @@ def generate_posters(root, catalog_out=None):
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #262033; background: #f1eff5; }}
-        .header {{ background: #2d1f4e; color: white; padding: 1.25rem 1.5rem; }}
+        .header {{ background: #0f3d3a; color: white; padding: 1.25rem 1.5rem; }}
         .header h1 {{ font-size: 1.55rem; margin-bottom: 0.25rem; }}
-        .header p {{ color: #ddd3ee; }}
+        .header p {{ color: #cfe9e5; }}
         .nav {{ display: flex; flex-wrap: wrap; gap: 1rem; background: white; padding: 0.8rem 1.5rem; border-bottom: 1px solid #dcd8e3; }}
-        .nav a {{ color: #0f766e; text-decoration: none; font-weight: 650; }}
+        .nav a {{ color: #6b3fa0; text-decoration: none; font-weight: 650; }}
         .nav a:hover {{ text-decoration: underline; }}
         .container {{ max-width: 1400px; margin: 0 auto; padding: 1.5rem; }}
         .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }}
         .stat-card {{ background: white; padding: 1rem 1.25rem; border: 1px solid #dcd8e3; border-radius: 8px; }}
-        .stat-card .number {{ font-size: 1.5rem; font-weight: 700; color: #6b3fa0; }}
+        .stat-card .number {{ font-size: 1.5rem; font-weight: 700; color: #0f766e; }}
         .stat-card .label {{ color: #6c6680; margin-top: 0.25rem; font-size: 0.85rem; }}
         .poster-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; }}
         .poster-card {{ background: white; border: 1px solid #dcd8e3; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }}
@@ -304,7 +304,7 @@ def generate_posters(root, catalog_out=None):
         .footer {{ text-align: center; padding: 1.5rem; color: #6c6680; font-size: 0.85rem; margin-top: 2rem; }}
         .poster-modal {{ position: fixed; inset: 0; z-index: 10001; }}
         .poster-modal[hidden] {{ display: none; }}
-        .poster-modal-stage {{ position: absolute; inset: 0; overflow: hidden; background: rgba(22, 16, 32, 0.94); cursor: grab; touch-action: none; }}
+        .poster-modal-stage {{ position: absolute; inset: 0; overflow: hidden; background: rgba(8, 32, 30, 0.94); cursor: grab; touch-action: none; }}
         .poster-modal-stage.grabbing {{ cursor: grabbing; }}
         .poster-modal-paper {{ position: absolute; top: 0; left: 0; transform-origin: 0 0; background: white; box-shadow: 0 6px 30px rgba(0, 0, 0, 0.45); }}
         .poster-modal-img {{ display: block; max-width: 92vw; max-height: 86vh; user-select: none; -webkit-user-drag: none; }}
@@ -320,7 +320,7 @@ def generate_posters(root, catalog_out=None):
     <script src="auth.js"></script>
     <div class="header">
         <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#5cc9bb" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
             <h1>Mnemosyne</h1>
         </div>
         <p style="margin-left: calc(34px + 0.8rem);">Posters</p>

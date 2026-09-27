@@ -84,7 +84,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             background: #f1eff5;
         }}
         .header {{
-            background: #2d1f4e;
+            background: #0f3d3a;
             color: white;
             padding: 1.25rem 1.5rem;
         }}
@@ -93,7 +93,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 0.25rem;
         }}
         .header p {{
-            color: #ddd3ee;
+            color: #cfe9e5;
         }}
         .nav {{
             display: flex;
@@ -104,7 +104,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             border-bottom: 1px solid #dcd8e3;
         }}
         .nav a {{
-            color: #0f766e;
+            color: #6b3fa0;
             font-weight: 650;
             text-decoration: none;
         }}
@@ -131,7 +131,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .stat-card .number {{
             font-size: 1.5rem;
             font-weight: 700;
-            color: #6b3fa0;
+            color: #0f766e;
         }}
         .stat-card .label {{
             color: #6c6680;
@@ -175,7 +175,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         th[data-column="thumbnail"] {{ width: 6%; }}
         th[data-column="experiment_id"] {{ width: 7%; }}
-        .exp-id {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 650; color: #115e59; white-space: nowrap; }}
+        .exp-id {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 650; color: #5a3389; white-space: nowrap; }}
         th[data-column="experiment_type"] {{ width: 10%; }}
         th[data-column="explorer"] {{ width: 7%; }}
         th[data-column="date"] {{ width: 6%; }}
@@ -241,7 +241,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             display: none;
         }}
         .protocol-link {{
-            color: #0f766e;
+            color: #6b3fa0;
             text-decoration: none;
             font-weight: 600;
         }}
@@ -252,7 +252,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             display: inline-block;
             padding: 0.2rem 0.6rem;
             border-radius: 6px;
-            background: #0f766e;
+            background: #6b3fa0;
             color: #fff;
             font-weight: 650;
             font-size: 0.82rem;
@@ -260,7 +260,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             white-space: nowrap;
         }}
         .explorer-link:hover {{
-            background: #134e4a;
+            background: #4a2a78;
         }}
         .comments-cell {{
             font-size: 0.9rem;
@@ -288,9 +288,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             display: inline-block;
             max-width: 100%;
             border-radius: 12px;
-            background: #dff3ef;
+            background: #eee7f7;
             line-height: 1.35;
-            color: #115e59;
+            color: #5a3389;
             font-size: 0.75rem;
             font-weight: 600;
             padding: 0.1rem 0.5rem;
@@ -329,7 +329,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <script src="auth.js"></script>
     <div class="header">
         <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#5cc9bb" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
             <h1>Mnemosyne</h1>
         </div>
         <p style="margin-left: calc(34px + 0.8rem);">Experiment Catalog</p>
