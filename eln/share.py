@@ -38,6 +38,10 @@ _REF = re.compile(r'(?:src|href)="([^"]+)"')
 _MOVIE_REF = re.compile(r'["\']movie["\']\s*:\s*["\']([^"\']+)["\']')
 # A reference that lands inside a self-contained presentation deck directory.
 _PRES_DECK = re.compile(r"^(presentations/[^/]+)/")
+# Experiment viewers are also self-contained applications. Their JavaScript
+# computes image/video paths at runtime, so reference scraping cannot discover
+# every asset; copy the viewer directory as one unit.
+_EXPLORER_BUNDLE = re.compile(r"^(explorers/[^/]+)/")
 # The server-only ``auth.js`` script a generated page carries (stripped on export).
 _AUTH_JS = re.compile(r'[ \t]*<script src="auth\.js"></script>\n?')
 _NAV_BLOCK = re.compile(r'[ \t]*<div class="nav">.*?</div>\s*?\n?', re.DOTALL)
@@ -142,6 +146,7 @@ def _collect_assets(start_pages, root, dest, generated):
     root, dest = Path(root), Path(dest)
     seen = set(generated)
     decks = set()
+    explorer_bundles = set()
     missing, total = [], 0
     queue = list(start_pages)
     while queue:
@@ -163,6 +168,19 @@ def _collect_assets(start_pages, root, dest, generated):
                         rels, nbytes = _copy_tree(deck_dir, dest / deck)
                         total += nbytes
                         seen.update(f"{deck}/{r}" for r in rels)
+                    elif not (dest / rel).exists():
+                        missing.append(rel)
+                continue
+            m = _EXPLORER_BUNDLE.match(rel)
+            if m:
+                bundle = m.group(1)
+                if bundle not in explorer_bundles:
+                    explorer_bundles.add(bundle)
+                    bundle_dir = root / bundle
+                    if bundle_dir.is_dir():
+                        rels, nbytes = _copy_tree(bundle_dir, dest / bundle)
+                        total += nbytes
+                        seen.update(f"{bundle}/{r}" for r in rels)
                     elif not (dest / rel).exists():
                         missing.append(rel)
                 continue

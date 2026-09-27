@@ -209,6 +209,29 @@ def test_collect_assets_copies_whole_deck(tmp_path):
     assert missing == []
 
 
+def test_collect_assets_copies_whole_experiment_viewer(tmp_path):
+    root = tmp_path / "root"
+    dest = tmp_path / "dest"
+    viewer = root / "explorers" / "TESTS-01"
+    (viewer / "img").mkdir(parents=True)
+    (viewer / "index.html").write_text('<script src="view.js"></script>')
+    (viewer / "view.js").write_text("loadVideoFromManifest()")
+    (viewer / "img" / "movie.mp4").write_bytes(b"video not named in HTML")
+    dest.mkdir()
+
+    _seen, missing, total = _collect_assets(
+        [("", '<a href="explorers/TESTS-01/index.html">Viewer</a>')],
+        root, dest, generated=set(),
+    )
+
+    copied = dest / "explorers" / "TESTS-01"
+    assert (copied / "index.html").is_file()
+    assert (copied / "view.js").is_file()
+    assert (copied / "img" / "movie.mp4").read_bytes() == b"video not named in HTML"
+    assert total == sum(p.stat().st_size for p in viewer.rglob("*") if p.is_file())
+    assert missing == []
+
+
 def test_collect_assets_reports_missing(tmp_path):
     root = tmp_path / "root"; root.mkdir()
     dest = tmp_path / "dest"; dest.mkdir()
