@@ -177,6 +177,19 @@ def cmd_regenerate(args):
     return 0
 
 
+def cmd_thumbnails(args):
+    from eln.thumbnails import generate
+
+    config = _load(args)
+    try:
+        generate(config.data_root, config.scan_roots, keys=args.keys or None,
+                 force=args.force, dry_run=args.dry_run)
+    except ImportError as exc:
+        print(f"missing dependency ({exc}); install with: pip install -e '.[thumbnails]'")
+        return 1
+    return 0
+
+
 def cmd_rebuild(args):
     config = _load(args)
     db = config.data_root / DEFAULT_DB_NAME
@@ -343,6 +356,15 @@ def build_parser():
                    help="create/refresh one auto report per series under "
                         "reports/<CODE>/ before rendering (writes into the data repo)")
     p.set_defaults(func=cmd_regenerate)
+
+    p = sub.add_parser("thumbnails",
+                       help="render one preview per session from the best file under the scan roots")
+    p.add_argument("keys", nargs="*", metavar="CODE-NN",
+                   help="sessions to render (default: every session in experiments.db)")
+    p.add_argument("--force", action="store_true", help="re-render existing thumbnails")
+    p.add_argument("--dry-run", action="store_true",
+                   help="print the file each session would be rendered from, render nothing")
+    p.set_defaults(func=cmd_thumbnails)
 
     p = sub.add_parser("rebuild", help="experiments.sql -> DB")
     p.add_argument("--force", action="store_true")

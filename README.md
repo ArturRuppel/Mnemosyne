@@ -158,6 +158,7 @@ Everything is driven by the `labbook` CLI.
 | `labbook verify` | Recompute file hashes and verify timestamps; report drift |
 | `labbook timestamp --retry` | Retry any RFC 3161 timestamps left pending by a TSA outage |
 | `labbook regenerate` | Rebuild the static catalog HTML from the database |
+| `labbook thumbnails` | Render one preview per session from the best file under the scan roots (processed results before raw; needs `pip install -e ".[thumbnails]"` and ffmpeg) |
 | `labbook rebuild` | Reconstruct the binary database from `experiments.sql` |
 | `labbook publish` | Dump the DB to `experiments.sql`, commit, and push (with timestamping) |
 | `labbook backup` | Launch the data backup flow |

@@ -26,6 +26,10 @@ dependencies = [
     "Pygments>=2.17",
 ]
 
+[project.optional-dependencies]
+# `labbook thumbnails` reads image stacks and movie frames; ffmpeg must be on PATH for mp4.
+thumbnails = ["numpy", "Pillow", "tifffile", "zarr"]
+
 [project.urls]
 Homepage = "https://github.com/arturruppel/electronic_labbook"
 Repository = "https://github.com/arturruppel/electronic_labbook"

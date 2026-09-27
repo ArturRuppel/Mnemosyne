@@ -22,7 +22,7 @@ def test_bare_invocation_prints_help_and_exits_zero(capsys):
 def test_parser_has_all_subcommands():
     parser = build_parser()
     sub = next(a for a in parser._actions if a.dest == "command")
-    for name in ["admin", "scan", "regenerate", "rebuild", "publish", "backup",
+    for name in ["admin", "scan", "regenerate", "rebuild", "publish", "backup", "thumbnails",
                  "timestamp"]:
         assert name in sub.choices
 
