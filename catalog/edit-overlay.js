@@ -8,7 +8,7 @@
     const toolbar = document.createElement('div');
     toolbar.className = 'eln-toolbar';
     toolbar.innerHTML = `
-        <span class="eln-toolbar-label">Lab Notebook</span>
+        <span class="eln-toolbar-label">Mnemosyne</span>
         <div class="eln-toolbar-actions">
             <button class="eln-toolbar-btn" id="eln-export-btn">Export catalog</button>
             <button class="eln-toolbar-btn publish" id="eln-publish-btn">Publish</button>

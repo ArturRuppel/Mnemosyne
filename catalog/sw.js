@@ -1,4 +1,4 @@
-// Service worker for the Lab Notebook PWA.
+// Service worker for the Mnemosyne PWA.
 //
 // Its only job is to make the app *installable* as a standalone desktop app —
 // browsers require a registered service worker with a fetch handler before they

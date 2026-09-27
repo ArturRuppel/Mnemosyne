@@ -84,7 +84,7 @@ def cmd_admin(args):
     display_host = "localhost" if args.host == "0.0.0.0" else args.host
     url = f"http://{display_host}:{args.port}/"
     print("=" * 50)
-    print(f"Lab Notebook (admin view): {url}")
+    print(f"Mnemosyne (admin view): {url}")
     print("Local use only — unauthenticated.")
     print("=" * 50)
     if args.scan:
@@ -234,7 +234,7 @@ def cmd_backup(args):
     display_host = "localhost" if args.host == "0.0.0.0" else args.host
     url = f"http://{display_host}:{args.port}/"
     print("=" * 50)
-    print(f"Lab Notebook backup: {url}")
+    print(f"Mnemosyne backup: {url}")
     print("Select experiments/files, then click Backup.")
     print("=" * 50)
     if not args.no_browser:
@@ -323,7 +323,7 @@ def cmd_stamp(args):
 # ---- parser --------------------------------------------------------------
 
 def build_parser():
-    parser = argparse.ArgumentParser(prog="labbook", description="Electronic lab notebook CLI.")
+    parser = argparse.ArgumentParser(prog="labbook", description="Mnemosyne, the electronic lab notebook CLI.")
     parser.add_argument("--config", default=None, help="path to labbook.toml (overrides discovery)")
     parser.add_argument("--root", default=None, help="data-repo root (overrides ELN_ROOT and config)")
     sub = parser.add_subparsers(dest="command")

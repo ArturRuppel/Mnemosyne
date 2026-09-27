@@ -294,8 +294,8 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
     <script src="auth.js"></script>
     <div class="header">
         <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="12" y="8" width="40" height="48" rx="4" fill="#eef1f4"></rect><line x1="21" y1="8" x2="21" y2="56" stroke="#8aa0b3" stroke-width="1.6"></line><circle cx="16.5" cy="20" r="1.6" fill="#8aa0b3"></circle><circle cx="16.5" cy="32" r="1.6" fill="#8aa0b3"></circle><circle cx="16.5" cy="44" r="1.6" fill="#8aa0b3"></circle><line x1="27" y1="24" x2="46" y2="24" stroke="#42566b" stroke-width="2.4" stroke-linecap="round"></line><line x1="27" y1="32" x2="46" y2="32" stroke="#42566b" stroke-width="2.4" stroke-linecap="round"></line><line x1="27" y1="40" x2="40" y2="40" stroke="#42566b" stroke-width="2.4" stroke-linecap="round"></line></svg>
-            <h1>Electronic Lab Notebook</h1>
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#eef1f4"></path><g stroke="#6aa8d8" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
+            <h1>Mnemosyne</h1>
         </div>
         <p style="margin-left: calc(34px + 0.8rem);">Protocols</p>
     </div>
@@ -309,7 +309,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
     </div>
 
     <div class="footer">
-        Electronic Lab Notebook
+        Mnemosyne
     </div>
 
     <script>

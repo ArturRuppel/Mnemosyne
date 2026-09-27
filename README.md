@@ -1,4 +1,6 @@
-# Electronic Lab Notebook
+# Mnemosyne
+
+*An electronic lab notebook, named for the Titaness of memory.*
 
 **A lab notebook whose entries stay bound to the data they describe, and stay
 that way verifiably.**

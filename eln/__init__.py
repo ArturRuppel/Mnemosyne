@@ -1,4 +1,4 @@
-"""Electronic Lab Notebook — filesystem-centric ELN with a Scientific Data Graph Layer.
+"""Mnemosyne, an electronic lab notebook — filesystem-centric ELN with a Scientific Data Graph Layer.
 
 Subpackages:
 

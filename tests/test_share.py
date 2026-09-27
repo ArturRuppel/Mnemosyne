@@ -308,7 +308,7 @@ def test_export_all_bundles_brand_favicons(data_root, tmp_path):
         assert '<link rel="icon" type="image/svg+xml" href="eln-logo.svg">' in head, page
         assert '<link rel="apple-touch-icon" href="apple-touch-icon.png">' in head, page
     # The header carries the inline notebook logo next to the title.
-    assert 'viewBox="0 0 64 64"' in (dest / "experiments.html").read_text()
+    assert 'viewBox="0 0 100 100"' in (dest / "experiments.html").read_text()
     # Favicon refs resolve against the bundle, so nothing is flagged missing.
     assert result["missing"] == []
 
