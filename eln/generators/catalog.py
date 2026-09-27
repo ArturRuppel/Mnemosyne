@@ -78,10 +78,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             box-sizing: border-box;
         }}
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Archivo', system-ui, -apple-system, sans-serif;
             line-height: 1.6;
-            color: #262033;
-            background: #f1eff5;
+            color: #1c1b22;
+            background: #f3f3f4;
         }}
         .header {{
             background: #0f3d3a;
@@ -93,7 +93,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 0.25rem;
         }}
         .header p {{
-            color: #cfe9e5;
+            color: #d2e8e7;
         }}
         .nav {{
             display: flex;
@@ -101,7 +101,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             gap: 1rem;
             background: white;
             padding: 0.8rem 1.5rem;
-            border-bottom: 1px solid #dcd8e3;
+            border-bottom: 1px solid #d4d4d8;
         }}
         .nav a {{
             color: #6b3fa0;
@@ -125,23 +125,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .stat-card {{
             background: white;
             padding: 1rem 1.25rem;
-            border: 1px solid #dcd8e3;
+            border: 1px solid #d4d4d8;
             border-radius: 8px;
         }}
         .stat-card .number {{
             font-size: 1.5rem;
             font-weight: 700;
-            color: #0f766e;
+            color: #0e7c7b;
         }}
         .stat-card .label {{
-            color: #6c6680;
+            color: #5c5b63;
             margin-top: 0.25rem;
             font-size: 0.85rem;
         }}
         .filters {{
             background: white;
             padding: 1rem 1.25rem;
-            border: 1px solid #dcd8e3;
+            border: 1px solid #d4d4d8;
             border-radius: 8px;
             margin-bottom: 1.5rem;
         }}
@@ -156,13 +156,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .filter-group input {{
             width: 100%;
             padding: 0.5rem 0.65rem;
-            border: 1px solid #bfb8ca;
+            border: 1px solid #b6b6bc;
             border-radius: 6px;
             font-size: 1rem;
         }}
         .table-container {{
             background: white;
-            border: 1px solid #dcd8e3;
+            border: 1px solid #d4d4d8;
             border-radius: 8px;
             overflow-x: auto;
         }}
@@ -187,21 +187,21 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         th[data-column="tags"] {{ width: 8%; }}
         th[data-column="comments"] {{ width: 11%; }}
         th {{
-            background: #f4f2f7;
-            color: #564f66;
+            background: #f8f8f9;
+            color: #403f47;
             padding: 0.65rem;
             text-align: left;
             font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
-            border-bottom: 1px solid #e4e0ea;
+            border-bottom: 1px solid #e8e8ea;
             position: sticky;
             top: 0;
             cursor: pointer;
             user-select: none;
         }}
         th:hover {{
-            background: #ebe8f0;
+            background: #eaeaec;
         }}
         th::after {{
             content: ' ↕';
@@ -227,15 +227,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             user-select: none;
         }}
         .col-resizer:hover {{
-            background: #c9c2d4;
+            background: #c4c4ca;
         }}
         td {{
             padding: 0.65rem;
-            border-bottom: 1px solid #e4e0ea;
+            border-bottom: 1px solid #e8e8ea;
             vertical-align: top;
         }}
         tr:hover {{
-            background: #faf9fc;
+            background: #f8f8f9;
         }}
         tr.hidden {{
             display: none;
@@ -303,23 +303,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             max-width: 100%;
             max-height: 56px;
             border-radius: 4px;
-            border: 1px solid #dcd8e3;
+            border: 1px solid #d4d4d8;
             object-fit: cover;
             display: block;
         }}
         .date-missing {{
-            color: #a29bb0;
+            color: #9a9aa1;
         }}
         .no-results {{
             text-align: center;
             padding: 3rem;
-            color: #6c6680;
+            color: #5c5b63;
             font-size: 1.1rem;
         }}
         .footer {{
             text-align: center;
             padding: 1.5rem;
-            color: #6c6680;
+            color: #5c5b63;
             font-size: 0.85rem;
             margin-top: 2rem;
         }}
@@ -329,7 +329,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <script src="auth.js"></script>
     <div class="header">
         <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f3f3f4"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
             <h1>Electronic Lab Notebook</h1>
         </div>
         <p style="margin-left: calc(34px + 0.8rem);">Experiment Catalog</p>

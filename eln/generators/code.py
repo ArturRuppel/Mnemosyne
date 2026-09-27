@@ -97,24 +97,24 @@ def _code_css():
         .code-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr);
             gap: 1.5rem; align-items: start; }
         .code-sidebar { position: sticky; top: 1rem; max-height: calc(100vh - 2rem);
-            overflow: auto; background: #fff; border: 1px solid #dcd8e3;
+            overflow: auto; background: #fff; border: 1px solid #d4d4d8;
             border-radius: 8px; padding: 0.8rem 0.9rem; font-size: 0.85rem; }
         .code-side-title { font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.04em; font-size: 0.72rem; color: #5d5670; margin-bottom: 0.5rem; }
-        .code-sidebar .code-grp { font-weight: 700; color: #262033; margin: 0.6rem 0 0.2rem;
+            letter-spacing: 0.04em; font-size: 0.72rem; color: #4e4d55; margin-bottom: 0.5rem; }
+        .code-sidebar .code-grp { font-weight: 700; color: #1c1b22; margin: 0.6rem 0 0.2rem;
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
         .code-sidebar ul { list-style: none; margin: 0 0 0.2rem; padding-left: 0.6rem; }
         .code-sidebar a { color: #6b3fa0; text-decoration: none; }
         .code-sidebar a:hover { text-decoration: underline; }
-        .code-sidebar .code-syms a { color: #5d5670; font-family: ui-monospace, monospace;
+        .code-sidebar .code-syms a { color: #4e4d55; font-family: ui-monospace, monospace;
             font-size: 0.8rem; }
-        .code-file { background: #fff; border: 1px solid #dcd8e3; border-radius: 8px;
+        .code-file { background: #fff; border: 1px solid #d4d4d8; border-radius: 8px;
             margin-bottom: 1.2rem; scroll-margin-top: 1rem; }
         .code-file-h { display: flex; align-items: center; gap: 0.5rem;
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95rem;
-            padding: 0.7rem 0.9rem; border-bottom: 1px solid #f1eff5; background: #f8f7fa;
+            padding: 0.7rem 0.9rem; border-bottom: 1px solid #f3f3f4; background: #f8f8f9;
             border-radius: 8px 8px 0 0; }
-        .code-file-h .code-permalink { color: #a29bb0; text-decoration: none; margin-left: auto; }
+        .code-file-h .code-permalink { color: #9a9aa1; text-decoration: none; margin-left: auto; }
         .code-file .highlight { margin: 0; overflow-x: auto; padding: 0.7rem 0.9rem;
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem;
             line-height: 1.5; }

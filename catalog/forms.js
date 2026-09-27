@@ -328,10 +328,10 @@
         '<input type="text" id="exp-type" list="exp-types-list" placeholder="e.g., spheroid imaging" required /></div>' +
         '<div class="form-group"><label for="exp-code">Code</label>' +
         '<input type="text" id="exp-code" maxlength="5" placeholder="5 chars, e.g. SPHIM or TFM01" autocomplete="off" pattern="[A-Za-z0-9]{5}" style="text-transform:uppercase" />' +
-        '<small id="exp-code-hint" style="color:#6c6680;">Auto-filled for known titles; set a new 5-character code for a new title.</small></div>' +
+        '<small id="exp-code-hint" style="color:#5c5b63;">Auto-filled for known titles; set a new 5-character code for a new title.</small></div>' +
         '<div class="form-group"><label for="exp-rep">Repetition</label>' +
         '<input type="text" id="exp-rep" maxlength="3" placeholder="e.g., 1, 03, X3, x03" pattern="[A-Za-z0-9]{1,3}" />' +
-        '<small id="exp-rep-hint" style="color:#6c6680;">Optional X prefix marks excluded (X3, x03). Leave empty for next free.</small></div>' +
+        '<small id="exp-rep-hint" style="color:#5c5b63;">Optional X prefix marks excluded (X3, x03). Leave empty for next free.</small></div>' +
         '<div class="form-group"><label for="exp-microscope">Microscope</label>' +
         '<input type="text" id="exp-microscope" list="microscopes-list" placeholder="e.g., Nikon TiE2 Spinning Disk CSU" /></div>' +
         '<div class="form-group"><label for="exp-live-fixed">Live or Fixed</label>' +
@@ -657,7 +657,7 @@
         '<input type="text" id="poster-title" required placeholder="e.g., EMBO workshop — cytoskeleton" /></div>' +
         '<div class="form-group full-width"><label for="poster-file">SVG file *</label>' +
         '<select id="poster-file" required></select>' +
-        '<small id="poster-file-hint" style="color:#6c6680;">Files in the data repo\'s <code>posters/</code> folder.</small></div>' +
+        '<small id="poster-file-hint" style="color:#5c5b63;">Files in the data repo\'s <code>posters/</code> folder.</small></div>' +
         '</div><div class="button-group"><button type="submit" class="button">Save Poster</button>' +
         '<button type="button" class="button secondary" data-eln-cancel>Cancel</button></div></form>';
 

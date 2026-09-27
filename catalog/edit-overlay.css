@@ -14,7 +14,7 @@
     gap: 0.6rem;
     z-index: 9999;
     box-shadow: 0 -2px 10px rgba(0,0,0,0.25);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Archivo', system-ui, -apple-system, sans-serif;
 }
 
 /* Right-aligned cluster holding Add / Export / Publish, kept tightly grouped. */
@@ -68,16 +68,16 @@
 }
 
 .eln-toolbar-btn.publish {
-    background: #0f766e;
+    background: #0e7c7b;
     color: white;
 }
 
 .eln-toolbar-btn.publish:hover {
-    background: #115e59;
+    background: #0a6564;
 }
 
 .eln-toolbar-btn.publish:disabled {
-    background: #483f59;
+    background: #3a3940;
     cursor: not-allowed;
     transform: none;
 }
@@ -168,7 +168,7 @@ body.eln-editing {
     opacity: 0;
     transform: translateY(-10px);
     transition: opacity 0.3s, transform 0.3s;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Archivo', system-ui, -apple-system, sans-serif;
 }
 
 .eln-toast.show {
@@ -204,7 +204,7 @@ body.eln-editing {
     border-radius: 10px;
     padding: 0;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Archivo', system-ui, -apple-system, sans-serif;
     color: #333;
 }
 .eln-form-modal::backdrop { background: rgba(0, 0, 0, 0.45); }
@@ -242,7 +242,7 @@ body.eln-editing {
 .eln-form-modal-body input,
 .eln-form-modal-body select,
 .eln-form-modal-body textarea {
-    padding: 0.75rem; border: 1px solid #bfb8ca; border-radius: 6px;
+    padding: 0.75rem; border: 1px solid #b6b6bc; border-radius: 6px;
     font-size: 0.95rem; font-family: inherit;
 }
 .eln-form-modal-body textarea {
@@ -251,7 +251,7 @@ body.eln-editing {
 }
 .eln-form-modal-body textarea.large { min-height: 300px; }
 .eln-form-modal-body .button {
-    padding: 0.75rem 1.5rem; background: #0f766e; color: white; border: none;
+    padding: 0.75rem 1.5rem; background: #0e7c7b; color: white; border: none;
     border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer;
 }
 .eln-form-modal-body .button:hover { background: #5a3389; }
@@ -266,13 +266,13 @@ body.eln-editing {
 .eln-form-modal-body .channel-row .channel-modality { flex: 1 1 auto; margin: 0; }
 .eln-form-modal-body .protocol-checkbox-item {
     display: flex; align-items: center; padding: 0.5rem; margin-bottom: 0.25rem;
-    background: #f8f7fa; border-radius: 4px;
+    background: #f8f8f9; border-radius: 4px;
 }
 .eln-form-modal-body .protocol-checkbox-item input[type="checkbox"] { margin-right: 0.5rem; width: auto; }
 .eln-form-modal-body .protocol-checkbox-item label { margin: 0; cursor: pointer; flex: 1; }
 .eln-form-modal-body .tag-input {
     display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
-    border: 1px solid #bfb8ca; border-radius: 6px; padding: 0.5rem; background: white;
+    border: 1px solid #b6b6bc; border-radius: 6px; padding: 0.5rem; background: white;
 }
 .eln-form-modal-body .tag-input input { flex: 1; min-width: 8rem; border: none; outline: none; padding: 0.25rem; }
 .eln-form-modal-body .tag-chip {
@@ -288,15 +288,15 @@ body.eln-editing {
 /* Report version selector — lives inside the card body, so it only shows once
    the card is expanded (mirrors the protocols' .version-selector). */
 .eln-version {
-    margin: 0 0 1rem; font-size: 0.9rem; color: #564f66;
+    margin: 0 0 1rem; font-size: 0.9rem; color: #403f47;
     display: flex; gap: 0.5rem; align-items: center;
 }
 .eln-version label { font-weight: 600; }
 .eln-version-select {
-    padding: 0.4rem 0.6rem; border: 1px solid #bfb8ca;
+    padding: 0.4rem 0.6rem; border: 1px solid #b6b6bc;
     border-radius: 6px; font-size: 0.9rem;
 }
 .eln-version-pre {
-    white-space: pre-wrap; background: #f6f4f8; padding: 1rem;
+    white-space: pre-wrap; background: #f5f5f6; padding: 1rem;
     border-radius: 6px; overflow: auto;
 }

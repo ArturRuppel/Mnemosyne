@@ -75,6 +75,7 @@ PWA_HEAD_SNIPPET = '''
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/archivo.css">
 <meta name="theme-color" content="#0f3d3a">
 <script>
 if ('serviceWorker' in navigator) {
@@ -227,6 +228,10 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
     @app.route("/edit-overlay.css")
     def serve_overlay_css():
         return send_from_directory(str(assets), "edit-overlay.css")
+
+    @app.route("/archivo.css")
+    def serve_archivo_css():
+        return send_from_directory(str(assets), "archivo.css")
 
     @app.route("/forms.js")
     def serve_forms_js():

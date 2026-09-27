@@ -178,10 +178,10 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             box-sizing: border-box;
         }}
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Archivo', system-ui, -apple-system, sans-serif;
             line-height: 1.6;
-            color: #262033;
-            background: #f1eff5;
+            color: #1c1b22;
+            background: #f3f3f4;
         }}
         .header {{
             background: #0f3d3a;
@@ -193,7 +193,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 0.25rem;
         }}
         .header p {{
-            color: #cfe9e5;
+            color: #d2e8e7;
         }}
         .nav {{
             display: flex;
@@ -201,7 +201,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             gap: 1rem;
             background: white;
             padding: 0.8rem 1.5rem;
-            border-bottom: 1px solid #dcd8e3;
+            border-bottom: 1px solid #d4d4d8;
         }}
         .nav a {{
             color: #6b3fa0;
@@ -228,25 +228,25 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             font-size: 1.8rem;
             margin-top: 1.5rem;
             margin-bottom: 1rem;
-            color: #231d33;
+            color: #1c1b22;
         }}
         .report-content h2 {{
             font-size: 1.5rem;
             margin-top: 1.5rem;
             margin-bottom: 0.75rem;
-            color: #564f66;
+            color: #403f47;
         }}
         .report-content h3 {{
             font-size: 1.2rem;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
-            color: #564f66;
+            color: #403f47;
         }}
         .report-content h4 {{
             font-size: 1.1rem;
             margin-top: 0.75rem;
             margin-bottom: 0.5rem;
-            color: #564f66;
+            color: #403f47;
         }}
         .report-content ul {{
             margin: 0.5rem 0 0.5rem 2rem;
@@ -255,18 +255,18 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 0.25rem;
         }}
         .report-content code {{
-            background: #f4f2f7;
+            background: #f8f8f9;
             padding: 0.2rem 0.4rem;
             border-radius: 3px;
             font-family: monospace;
             font-size: 0.9em;
         }}
         .report-content blockquote {{
-            border-left: 3px solid #0f766e;
+            border-left: 3px solid #0e7c7b;
             padding-left: 1rem;
             margin: 1rem 0;
-            color: #564f66;
-            background: #faf9fc;
+            color: #403f47;
+            background: #f8f8f9;
             padding: 0.5rem 1rem;
             border-radius: 4px;
         }}
@@ -289,14 +289,14 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             line-height: 1.4;
         }}
         .report-content th {{
-            background: #f4f2f7;
-            color: #463f56;
+            background: #f8f8f9;
+            color: #3a3940;
             text-align: left;
             font-weight: 650;
         }}
         .report-content th, .report-content td {{
             padding: 0.48rem 0.6rem;
-            border: 1px solid #dfdae6;
+            border: 1px solid #dedee2;
             vertical-align: top;
         }}
         .report-embed {{
@@ -309,7 +309,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         .report-card {{
             background: white;
-            border: 1px solid #dcd8e3;
+            border: 1px solid #d4d4d8;
             border-radius: 8px;
             margin-bottom: 1rem;
             overflow: hidden;
@@ -323,7 +323,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             transition: background-color 0.2s;
         }}
         .report-header:hover {{
-            background-color: #f4f2f7;
+            background-color: #f8f8f9;
         }}
         /* Single-report export: header is non-interactive, body always open. */
         .report-header.standalone {{
@@ -335,14 +335,14 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         .report-title-row {{
             font-size: 1.15rem;
             font-weight: 650;
-            color: #231d33;
+            color: #1c1b22;
             display: flex;
             align-items: center;
             gap: 1rem;
         }}
         .report-date {{
             font-size: 0.9rem;
-            color: #6c6680;
+            color: #5c5b63;
             font-weight: 500;
         }}
         .expand-icon {{
@@ -355,20 +355,20 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         .report-details {{
             display: none;
             padding: 0 1.5rem 1.5rem 1.5rem;
-            border-top: 1px solid #e4e0ea;
+            border-top: 1px solid #e8e8ea;
             margin: 0 1rem;
         }}
         .report-view-toggle {{
             display: inline-flex;
             margin: 1rem 0 0.25rem 0;
-            border: 1px solid #d4cfdc;
+            border: 1px solid #d4d4d8;
             border-radius: 6px;
             overflow: hidden;
         }}
         .view-btn {{
             background: white;
             border: none;
-            color: #564f66;
+            color: #403f47;
             font: inherit;
             font-size: 0.82rem;
             font-weight: 600;
@@ -376,10 +376,10 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             cursor: pointer;
         }}
         .view-btn + .view-btn {{
-            border-left: 1px solid #d4cfdc;
+            border-left: 1px solid #d4d4d8;
         }}
         .view-btn:hover {{
-            background: #f4f2f7;
+            background: #f8f8f9;
         }}
         .view-btn.active {{
             background: #6b3fa0;
@@ -410,8 +410,8 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         .nb-code {{
             flex: 1 1 auto;
             min-width: 0;
-            background: #f4f2f7;
-            border: 1px solid #e4e0ea;
+            background: #f8f8f9;
+            border: 1px solid #e8e8ea;
             border-radius: 6px;
             padding: 0.6rem 0.8rem;
             margin: 0;
@@ -437,8 +437,8 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin: 0.35rem 0 0 2.5rem;
         }}
         .nb-stream, .nb-out-text, .nb-error {{
-            background: #fbfafd;
-            border: 1px solid #f1eff5;
+            background: #fafafb;
+            border: 1px solid #f3f3f4;
             border-radius: 6px;
             padding: 0.5rem 0.7rem;
             margin: 0.3rem 0;
@@ -473,7 +473,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             border-collapse: collapse;
         }}
         .nb-out-html th, .nb-out-html td {{
-            border: 1px solid #e4e0ea;
+            border: 1px solid #e8e8ea;
             padding: 0.25rem 0.5rem;
         }}
         .report-tiles {{
@@ -485,7 +485,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             display: flex;
             flex-direction: column;
             background: white;
-            border: 1px solid #dcd8e3;
+            border: 1px solid #d4d4d8;
             border-radius: 8px;
             padding: 1rem 1rem 1.1rem;
         }}
@@ -495,7 +495,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             font-weight: 650;
         }}
         .tile-title a {{
-            color: #231d33;
+            color: #1c1b22;
             text-decoration: none;
         }}
         .tile-title a:hover {{
@@ -504,7 +504,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         .tile-date {{
             font-size: 0.82rem;
-            color: #6c6680;
+            color: #5c5b63;
             margin: 0.15rem 0 0.7rem;
         }}
         .tile-thumb {{
@@ -512,7 +512,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             align-items: center;
             justify-content: center;
             aspect-ratio: 1 / 1;
-            background: #f4f2f7;
+            background: #f8f8f9;
             border-radius: 6px;
             overflow: hidden;
             text-decoration: none;
@@ -526,13 +526,13 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
             font-size: 1.6rem;
             font-weight: 650;
-            color: #a29bb0;
+            color: #9a9aa1;
         }}
         .tile-summary {{
             margin-top: 0.75rem;
             font-size: 0.92rem;
             line-height: 1.5;
-            color: #463f56;
+            color: #3a3940;
         }}
         .report-back {{
             display: inline-block;
@@ -547,16 +547,16 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         .no-reports {{
             text-align: center;
             padding: 3rem;
-            color: #6c6680;
+            color: #5c5b63;
             background: white;
-            border: 1px solid #dcd8e3;
+            border: 1px solid #d4d4d8;
             border-radius: 8px;
         }}
         .report-provenance {{ margin-top: 1rem; padding-top: 0.75rem;
-                              border-top: 1px solid #e4e0ea; font-size: 0.85rem;
-                              color: #564f66; }}
+                              border-top: 1px solid #e8e8ea; font-size: 0.85rem;
+                              color: #403f47; }}
         .report-provenance h4 {{ font-size: 0.8rem; text-transform: uppercase;
-                                 color: #6c6680; margin-bottom: 0.4rem; }}
+                                 color: #5c5b63; margin-bottom: 0.4rem; }}
         .report-provenance li {{ list-style: none; }}
         .report-stale {{ background: #fbeede; color: #8a5a1f;
                          border: 1px solid #eccf9c; border-radius: 6px;
@@ -569,8 +569,8 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         .exp-overview {{
             margin: 1.5rem 0;
             padding: 1rem 1.25rem;
-            background: #faf9fc;
-            border: 1px solid #e4e0ea;
+            background: #f8f8f9;
+            border: 1px solid #e8e8ea;
             border-radius: 8px;
         }}
         .exp-overview-header {{
@@ -591,30 +591,30 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         .exp-overview-title {{
             font-size: 1.15rem;
             font-weight: 650;
-            color: #231d33;
+            color: #1c1b22;
         }}
         .exp-overview table {{
             width: 100%;
             border-collapse: collapse;
             font-size: 0.88rem;
             background: white;
-            border: 1px solid #e4e0ea;
+            border: 1px solid #e8e8ea;
             border-radius: 6px;
             overflow: hidden;
         }}
         .exp-overview th {{
-            background: #f4f2f7;
-            color: #564f66;
+            background: #f8f8f9;
+            color: #403f47;
             text-align: left;
             padding: 0.5rem 0.65rem;
             font-size: 0.72rem;
             font-weight: 600;
             text-transform: uppercase;
-            border-bottom: 1px solid #e4e0ea;
+            border-bottom: 1px solid #e8e8ea;
         }}
         .exp-overview td {{
             padding: 0.5rem 0.65rem;
-            border-bottom: 1px solid #f1eff5;
+            border-bottom: 1px solid #f3f3f4;
             vertical-align: top;
         }}
         .exp-overview tr:last-child td {{
@@ -655,12 +655,12 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             padding: 0.1rem 0.5rem;
         }}
         .exp-overview .date-missing {{
-            color: #a29bb0;
+            color: #9a9aa1;
         }}
         .exp-overview-protocols {{
             margin-top: 0.75rem;
             font-size: 0.9rem;
-            color: #564f66;
+            color: #403f47;
         }}
         .exp-overview-protocols a {{
             color: #6b3fa0;
@@ -679,13 +679,13 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             font-size: 0.9rem;
         }}
         .exp-overview-empty {{
-            color: #6c6680;
+            color: #5c5b63;
             font-style: italic;
         }}
         .footer {{
             text-align: center;
             padding: 1.5rem;
-            color: #6c6680;
+            color: #5c5b63;
             font-size: 0.85rem;
             margin-top: 2rem;
         }}
@@ -742,7 +742,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
     <script src="auth.js"></script>
     <div class="header">
         <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f1eff5"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f3f3f4"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
             <h1>Electronic Lab Notebook</h1>
         </div>
         <p style="margin-left: calc(34px + 0.8rem);">{page_heading}</p>

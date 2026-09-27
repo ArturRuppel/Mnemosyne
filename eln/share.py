@@ -51,7 +51,7 @@ _NAV_BLOCK = re.compile(r'[ \t]*<div class="nav">.*?</div>\s*?\n?', re.DOTALL)
 # SDGL page comes from). The favicon <link>s use bundle-relative hrefs because
 # the catalog pages sit flat at the bundle root.
 _CATALOG_ASSETS = Path(__file__).resolve().parents[1] / "catalog"
-_BRAND_FILES = ("eln-logo.svg", "favicon-16.png", "favicon-32.png", "apple-touch-icon.png")
+_BRAND_FILES = ("eln-logo.svg", "favicon-16.png", "favicon-32.png", "apple-touch-icon.png", "archivo.css")
 # The tab-shell (tabnav.js) was retired — generated pages no longer reference it,
 # so there is nothing extra to bundle here beyond the brand assets.
 _APP_SCRIPTS = ()
@@ -60,6 +60,7 @@ _FAVICON_HEAD = (
     '    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">\n'
     '    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">\n'
     '    <link rel="apple-touch-icon" href="apple-touch-icon.png">\n'
+    '    <link rel="stylesheet" href="archivo.css">\n'
 )
 
 
