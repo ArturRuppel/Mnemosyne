@@ -1428,9 +1428,9 @@ class SDGL:
                 "title": other_node["title"],
                 "relation": edge["relation_type"],
             }
-            # Reports are addressed in reports.html by their filename slug
-            # (the card id is ``report-<stem>``), not by the numeric DB id in
-            # the node_id. Surface the slug so the explorer can deep-link.
+            # Reports are addressed by their filename slug (each has its own
+            # page, ``report-<stem>.html``), not by the numeric DB id in the
+            # node_id. Surface the slug so the explorer can deep-link.
             if other_node["type"] == "report":
                 meta = json_loads(other_node["metadata"])
                 file_path = meta.get("file_path")

@@ -16,7 +16,7 @@ from pathlib import Path
 
 from eln.generators import generate_all
 from eln.generators.protocols import generate_protocol_catalog
-from eln.generators.reports import generate_reports
+from eln.generators.reports import generate_reports, report_page_name
 
 # Refs we never copy: external, in-page, inline data URIs, or root-relative.
 # A root-relative ref ("/litgraph/", "/") addresses one of the *server's* own
@@ -31,6 +31,11 @@ _EXTERNAL = re.compile(r"^(?:[a-z]+:|//|#|/)")
 # (see ``_PRES_DECK``), so the generated catalog pages (plain double quotes) are
 # all this needs to handle.
 _REF = re.compile(r'(?:src|href)="([^"]+)"')
+# Interactive explorers select media from an inline JavaScript manifest rather
+# than from a static ``src`` attribute.  Treat the manifest's explicit
+# ``movie`` fields as asset references too; keeping this key-specific avoids
+# scraping arbitrary quoted strings from the source-code catalog.
+_MOVIE_REF = re.compile(r'["\']movie["\']\s*:\s*["\']([^"\']+)["\']')
 # A reference that lands inside a self-contained presentation deck directory.
 _PRES_DECK = re.compile(r"^(presentations/[^/]+)/")
 # The server-only ``auth.js`` script a generated page carries (stripped on export).
@@ -72,7 +77,7 @@ def _local_refs(html):
     """Return in-order local (copyable) ``src``/``href`` targets, query/fragment
     stripped. External (`http:`, `//`, `mailto:`, `#`, `data:`) refs are dropped."""
     out = []
-    for raw in _REF.findall(html):
+    for raw in [*_REF.findall(html), *_MOVIE_REF.findall(html)]:
         if _EXTERNAL.match(raw):
             continue
         ref = raw.split("#", 1)[0].split("?", 1)[0]
@@ -162,7 +167,11 @@ def _collect_assets(start_pages, root, dest, generated):
                         missing.append(rel)
                 continue
             seen.add(rel)
-            src = root / rel
+            # Report prose links to repository files use the source/ namespace.
+            # Keep that namespace in the bundle, but read the file from its real
+            # location under the data root.
+            source_rel = rel.removeprefix("source/") if rel.startswith("source/") else rel
+            src = root / source_rel
             if src.is_file():
                 out = dest / rel
                 out.parent.mkdir(parents=True, exist_ok=True)
@@ -201,21 +210,25 @@ def export_all(root, dest):
     # 1. Render every catalog page straight into the bundle (flat at root).
     written = generate_all(root, catalog_out=dest)
 
-    # 2. Staticize each generated page in place + collect them as walk seeds.
+    # 2. Staticize each generated page in place + collect them as walk seeds. The
+    #    reports generator also writes one page per report next to its index.
     generated = set()
     start_pages = []
-    for path in written.values():
+    pages = {Path(path) for path in written.values()}
+    pages.update(dest.glob(report_page_name("*")))
+    for path in sorted(pages):
         rel = Path(path).name
         generated.add(rel)
         text = _staticize(Path(path).read_text())
         Path(path).write_text(text)
         start_pages.append(("", text))
 
-    # 3. The bundle's front door is the static SDGL graph, mirroring the live app
-    #    (which serves sdgl.html at /). Write the page + its data snapshot and
-    #    redirect the bundle root to it. Mark them as known generated siblings so
-    #    the repointed Data Explorer nav links resolve (not copied, not flagged).
+    # 3. The bundle's front door is the reports index, mirroring the live app
+    #    (which serves reports.html at /). Write the static SDGL graph + its data
+    #    snapshot and redirect the bundle root to the index. Mark both as known
+    #    generated siblings so their links resolve (not copied, not flagged).
     _write_sdgl_snapshot(root, dest)
+    (dest / "index.html").write_text(_REDIRECT.format(target="reports.html"))
     generated.update({"sdgl.html", "index.html"})
 
     # 3b. Drop the brand favicon/logo set in so the injected <link>s resolve
@@ -260,14 +273,12 @@ def _staticize_sdgl(html, snapshot):
 
 def _write_sdgl_snapshot(root, dest):
     """Write the static SDGL page (with its data snapshot embedded inline) into the
-    bundle and point the bundle root (``index.html``) at it. The snapshot is the same
-    payload the live ``/api/sdgl/tree`` endpoint returns, so the static page renders
-    identically offline."""
+    bundle. The snapshot is the same payload the live ``/api/sdgl/tree`` endpoint
+    returns, so the static page renders identically offline."""
     from eln.sdgl import SDGL
     sdgl = SDGL(root)
     snapshot = {"tree": sdgl.tree()}
     (dest / "sdgl.html").write_text(_staticize_sdgl(_SDGL_SOURCE.read_text(), snapshot))
-    (dest / "index.html").write_text(_REDIRECT.format(target="sdgl.html"))
 
 
 def export_item(root, dest, kind, ident):

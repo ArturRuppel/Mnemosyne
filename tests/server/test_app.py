@@ -39,6 +39,32 @@ def client(app_root):
     return app.test_client()
 
 
+def test_explicitly_linked_repository_file_is_served(app_root):
+    root, app = app_root
+    path = root / "code" / "vimfm" / "README.md"
+    path.parent.mkdir(parents=True)
+    path.write_text("# VIMFM method\n")
+    catalog = root / "catalog"
+    catalog.mkdir()
+    (catalog / "report-VIMFM.html").write_text(
+        '<a href="source/code/vimfm/README.md">method</a>'
+    )
+
+    response = app.test_client().get("/source/code/vimfm/README.md")
+
+    assert response.status_code == 200
+    assert b"VIMFM method" in response.data
+
+
+def test_unlinked_repository_file_is_not_served(app_root):
+    root, app = app_root
+    catalog = root / "catalog"
+    catalog.mkdir()
+    (catalog / "report-VIMFM.html").write_text("<p>No source links.</p>")
+
+    assert app.test_client().get("/source/experiments.db").status_code == 404
+
+
 # --- timestamps -------------------------------------------------------------
 
 def test_timestamp_verify_endpoint(client, monkeypatch):

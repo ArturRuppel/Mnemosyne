@@ -101,6 +101,20 @@ def test_local_refs_keeps_relative_skips_external():
     ]
 
 
+def test_local_refs_collects_movie_explorer_manifest_assets():
+    html = (
+        '<script>const runs=['
+        '{"movie":"reports/MAVIH/movies/a.mp4"},'
+        "{'movie':'reports/ACORT/movies/b.mp4?v=2#t'},"
+        '{"movie":"https://example.com/external.mp4"}'
+        ']</script>'
+    )
+    assert _local_refs(html) == [
+        "reports/MAVIH/movies/a.mp4",
+        "reports/ACORT/movies/b.mp4",
+    ]
+
+
 def test_local_refs_skips_root_relative_server_routes():
     """Root-relative refs address the server's own routes (the Literature link at
     /litgraph/, the dynamic /), not files in the data root. They are unbundleable,
@@ -211,10 +225,17 @@ def test_export_all_layout_and_staticized(data_root, tmp_path):
     for page in ["index.html", "experiments.html", "protocols.html",
                  "reports.html", "presentations.html"]:
         assert (dest / page).is_file(), page
-    # The bundle root redirects to the static SDGL page (the live app's front door).
+    # The bundle root redirects to the reports index (the live app's front door).
     home = (dest / "index.html").read_text()
     assert 'href="/"' not in home and "auth.js" not in home
-    assert "sdgl.html" in home                      # redirect target
+    assert "reports.html" in home                   # redirect target
+    assert (dest / "sdgl.html").is_file()           # graph still bundled
+    # Each report has its own staticized page, linked from the index.
+    index = (dest / "reports.html").read_text()
+    assert 'href="report-tfm_progress.html"' in index
+    page = (dest / "report-tfm_progress.html").read_text()
+    assert "auth.js" not in page
+    assert '<a href="sdgl.html">Data Explorer</a>' in page
     nav_page = (dest / "experiments.html").read_text()
     assert '<a href="sdgl.html">Data Explorer</a>' in nav_page  # repointed, not dropped
     assert ">Experiment Catalog<" in nav_page       # nav otherwise intact
@@ -405,14 +426,14 @@ def test_report_card_title_uses_series_identity(data_root, tmp_path):
     from eln.generators.reports import generate_reports
     out = tmp_path / "c"
     generate_reports(data_root, catalog_out=out)
-    html = (out / "reports.html").read_text()
+    html = (out / "report-tfm_progress.html").read_text()
     # tfm_progress.md declares '**Series:** TFMSP'; TFMSP -> 'Traction Force'.
     assert "TFMSP — Traction Force" in html
     # The free-form H1 still renders in the body, just not as the header title.
     # (Headings now carry a slug id so in-page anchor links resolve.)
     assert '<h1 id="tfm-progress">TFM progress</h1>' in html
     # notes.md has no series, so it falls back to its H1.
-    assert "Random notes" in html
+    assert "Random notes" in (out / "reports.html").read_text()
 
 
 def test_presentation_row_has_data_dir(data_root, tmp_path):

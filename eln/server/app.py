@@ -85,6 +85,9 @@ if ('serviceWorker' in navigator) {
 </script>
 '''
 
+# Each report's own page, written next to reports.html by the reports generator.
+_REPORT_PAGE_RE = re.compile(r"report-[^/]+\.html")
+
 _AUTH_SCRIPT_RE = re.compile(r'<script\s+src=["\']auth\.js["\']\s*>\s*</script>')
 
 
@@ -183,7 +186,7 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
     def serve_html_with_overlay(filename):
         """Serve a generated page (from the data root) or a static frontend
         asset (from the code repo) with the edit overlay injected."""
-        if filename in generated_pages:
+        if filename in generated_pages or _REPORT_PAGE_RE.fullmatch(filename):
             filepath = catalog_dir / filename
         else:
             filepath = assets / filename
@@ -280,6 +283,23 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
     @app.route("/reports/<path:filepath>")
     def serve_report_asset(filepath):
         return send_from_directory(str(reports_path), filepath, conditional=True)
+
+    @app.route("/source/<path:filepath>")
+    def serve_linked_source(filepath):
+        """Serve only repository files explicitly linked by a report page."""
+        linked = f'href="source/{filepath}"'
+        if not any(linked in page.read_text(encoding="utf-8")
+                   for page in catalog_dir.glob("report-*.html")):
+            return "Not found", 404
+
+        candidate = (root / filepath).resolve()
+        try:
+            candidate.relative_to(root.resolve())
+        except ValueError:
+            return "Not found", 404
+        if not candidate.is_file():
+            return "Not found", 404
+        return send_from_directory(str(root), filepath, conditional=True)
 
     @app.route("/thumbnails/<path:filepath>")
     def serve_thumbnail_asset(filepath):

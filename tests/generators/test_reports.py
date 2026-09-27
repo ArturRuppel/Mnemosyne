@@ -55,7 +55,11 @@ def test_notebook_markdown_source_as_string():
     assert "plain string" in notebook_markdown(nb)
 
 
-from eln.generators.reports import REPORTS_HTML_TEMPLATE, markdown_to_html
+from eln.generators.reports import (
+    REPORTS_HTML_TEMPLATE,
+    _rewrite_relative_links,
+    markdown_to_html,
+)
 
 
 def test_headings_get_slug_ids():
@@ -72,6 +76,34 @@ def test_in_page_anchor_link_matches_heading_id():
             + markdown_to_html("### Contact-type permutation null"))
     assert 'href="#contact-type-permutation-null"' in page
     assert 'id="contact-type-permutation-null"' in page
+
+
+def test_report_relative_links_are_rebased_to_the_data_root():
+    content = (
+        "[local notes](README.md) "
+        "[method](../../code/vimfm/README.md) "
+        "[section](#results) "
+        "[web](https://example.com) "
+        "![figure](figures/result.svg)"
+    )
+    out = _rewrite_relative_links(content, "reports/VIMFM")
+    assert "[local notes](source/reports/VIMFM/README.md)" in out
+    assert "[method](source/code/vimfm/README.md)" in out
+    assert "[section](#results)" in out
+    assert "[web](https://example.com)" in out
+    assert "![figure](figures/result.svg)" in out
+
+
+def test_report_relative_link_cannot_escape_the_data_root():
+    assert (
+        _rewrite_relative_links("[outside](../../../secret.txt)", "reports/VIMFM")
+        == "[outside](../../../secret.txt)"
+    )
+
+
+def test_report_catalog_sibling_links_are_not_rebased():
+    content = "[Protocol](protocols.html#6) and [Explorer](sdgl.html)"
+    assert _rewrite_relative_links(content, "reports/SORVI") == content
 
 
 def test_embedded_videos_loop_after_playback_starts():
@@ -155,7 +187,8 @@ def test_generate_renders_notebook_report(tmp_path):
                     "![fig](figures/plot.png)\n"]},
         {"cell_type": "code", "source": ["secret = compute()\n"], "outputs": []},
     ])
-    text = generate_reports(tmp_path).read_text()
+    generate_reports(tmp_path)
+    text = (tmp_path / "catalog" / "report-report.html").read_text()
     prose = text.split('class="report-code"')[0]    # everything before the code pane
     assert "Interpretation prose." in text           # markdown rendered
     assert "secret = compute()" not in prose         # code absent from the prose view
@@ -182,7 +215,8 @@ def test_opt_in_notebook_outputs_render_in_report_cell_order(tmp_path):
         "nbformat": 4,
         "nbformat_minor": 5,
     }))
-    text = generate_reports(tmp_path).read_text()
+    generate_reports(tmp_path)
+    text = (tmp_path / "catalog" / "report-report.html").read_text()
     prose = text.split('class="report-code"')[0]
     assert "Before." in prose and "<section id='panel'>" in prose and "After." in prose
     assert prose.index("Before.") < prose.index("<section id='panel'>") < prose.index("After.")
@@ -231,7 +265,8 @@ def test_report_card_shows_stale_badge(tmp_path):
     conn.close()
 
     inp.write_bytes(b"V2")  # input drifts after stamping
-    text = generate_reports(tmp_path).read_text()
+    generate_reports(tmp_path)
+    text = (tmp_path / "catalog" / "report-report.html").read_text()
     assert "stale" in text.lower()
     assert out_rel in text  # the produced artifact is listed in the footer
 
@@ -303,7 +338,8 @@ def test_notebook_report_has_code_toggle(tmp_path):
          "source": ["# COV2D\n", "**Series:** COV2D\n", "\nProse.\n"]},
         {"cell_type": "code", "source": ["secret = compute()\n"], "outputs": []},
     ])
-    text = generate_reports(tmp_path).read_text()
+    generate_reports(tmp_path)
+    text = (tmp_path / "catalog" / "report-report.html").read_text()
     # Report view still hides the code; the Code pane reveals it.
     assert "report-code" in text          # hidden code pane present
     assert "setReportView" in text        # toggle wired
@@ -316,7 +352,8 @@ def test_markdown_report_has_no_code_toggle(tmp_path):
     _make_db_with_codes(tmp_path / "experiments.db", ["COV2D"])
     (tmp_path / "reports").mkdir(parents=True, exist_ok=True)
     (tmp_path / "reports" / "note.md").write_text("# Note\n\nJust prose.\n")
-    text = generate_reports(tmp_path).read_text()
+    generate_reports(tmp_path)
+    text = (tmp_path / "catalog" / "report-note.html").read_text()
     assert "Just prose." in text
     assert 'class="report-code"' not in text   # no code pane for markdown reports
     assert "setReportView('note'" not in text  # no toggle for this card
@@ -348,5 +385,56 @@ def test_generate_skips_malformed_notebook(tmp_path):
     (tmp_path / "reports").mkdir()
     (tmp_path / "reports" / "broken.ipynb").write_text("{ this is not valid json")
     (tmp_path / "reports" / "ok.md").write_text("# Good\n\nReadable report.\n")
-    text = generate_reports(tmp_path).read_text()  # must not raise
+    generate_reports(tmp_path)  # must not raise
+    text = (tmp_path / "catalog" / "report-ok.html").read_text()
     assert "Readable report." in text  # the good report still renders
+
+
+def test_extract_summary_prefers_explicit_field():
+    from eln.generators.reports import extract_summary
+    content = ("# T\n\n**Series:** COV2D\n\n**Summary:** One *thing*. Two things.\n\n"
+               "{{experiments}}\n\nFirst prose.\n")
+    assert extract_summary(content) == "One thing. Two things."
+
+
+def test_extract_summary_falls_back_to_two_sentences_of_prose():
+    from eln.generators.reports import extract_summary
+    content = ("# T\n\n**Series:** COV2D · **Date:** 2026-01-01\n\n{{experiments}}\n\n"
+               "## Intro\n\n![f](x.png)\n\nThis asks [whether](a.md) cells\nmove. "
+               "They do. A third sentence.\n")
+    assert extract_summary(content) == "This asks whether cells move. They do."
+    assert extract_summary("# Only a title\n\n{{experiments}}\n") == ""
+
+
+def test_reports_index_tiles_link_to_report_pages(tmp_path):
+    from eln.generators.reports import generate_reports
+    _make_db_with_codes(tmp_path / "experiments.db", ["COV2D"])
+    report = tmp_path / "reports" / "COV2D" / "COV2D.md"
+    report.parent.mkdir(parents=True)
+    report.write_text("# COV2D\n\n**Series:** COV2D\n\n**Summary:** Short. Sweet.\n\n"
+                      "![fig](figures/a.png)\n\nBody prose.\n")
+    stale = tmp_path / "catalog" / "report-GONE.html"
+    stale.parent.mkdir()
+    stale.write_text("old")
+
+    index = generate_reports(tmp_path).read_text()
+    assert 'href="report-COV2D.html"' in index
+    assert '<p class="tile-summary">Short. Sweet.</p>' in index
+    assert 'src="reports/COV2D/figures/a.png"' in index   # first figure as fallback preview
+    assert "Body prose." not in index                     # body lives on its own page
+    page = (tmp_path / "catalog" / "report-COV2D.html").read_text()
+    assert "Body prose." in page
+    assert 'href="reports.html"' in page                  # back to the index
+    assert not stale.exists()                             # removed report's page pruned
+
+
+def test_declared_thumbnail_wins_and_is_hidden_from_body(tmp_path):
+    from eln.generators.reports import generate_reports
+    (tmp_path / "experiments.db").touch()
+    report = tmp_path / "reports" / "SIMUL" / "SIMUL.md"
+    report.parent.mkdir(parents=True)
+    report.write_text("# Sim\n\n**Thumbnail:** thumb.png\n\n![fig](a.png)\n\nProse.\n")
+    index = generate_reports(tmp_path).read_text()
+    assert 'src="reports/SIMUL/thumb.png"' in index
+    page = (tmp_path / "catalog" / "report-SIMUL.html").read_text()
+    assert "Thumbnail:" not in page and "Prose." in page

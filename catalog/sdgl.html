@@ -408,15 +408,14 @@
                     twisty: false, color: '#2b7a5f', icon: '📄',
                     label: 'Report'
                 });
-                // Click opens the report in reports.html. The fragment must be
-                // the filename slug (reports.html anchors are `report-<slug>`),
-                // not the numeric DB id embedded in node_id.
+                // Click opens the report's own page, report-<slug>.html. The slug
+                // is the report's filename stem, not the numeric DB id embedded in
+                // node_id; without one, fall back to the reports index.
                 row.addEventListener('click', () => {
-                    const frag = link.slug || (link.node_id || '').split(':', 2)[1];
                     // Navigate the current window (not window.open '_blank'): in an
                     // installed standalone PWA there is no tab strip, so '_blank'
                     // hands the URL to the default browser instead of staying in-app.
-                    window.location.href = `reports.html#${frag}`;
+                    window.location.href = link.slug ? `report-${link.slug}.html` : 'reports.html';
                 }, true);
                 return wrapLeaf(row);
             }
@@ -619,7 +618,7 @@
         function catalogHref(link) {
             const id = (link.node_id || '').split(':', 2)[1];
             if (link.type === 'protocol') return `protocols.html#${id}`;
-            if (link.type === 'report') return link.slug ? `reports.html#${link.slug}` : 'reports.html';
+            if (link.type === 'report') return link.slug ? `report-${link.slug}.html` : 'reports.html';
             if (link.type === 'presentation') return 'presentations.html';
             return null;
         }

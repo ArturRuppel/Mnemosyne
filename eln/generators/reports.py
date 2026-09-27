@@ -9,6 +9,7 @@ repetitions (dates derived from raw-file mtimes), and the deduplicated protocols
 
 import argparse
 import json
+import posixpath
 import re
 import sqlite3
 from datetime import datetime
@@ -475,6 +476,74 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             border: 1px solid #e0e5e9;
             padding: 0.25rem 0.5rem;
         }}
+        .report-tiles {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 1.25rem;
+        }}
+        .report-tile {{
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border: 1px solid #d7dde2;
+            border-radius: 8px;
+            padding: 1rem 1rem 1.1rem;
+        }}
+        .tile-title {{
+            font-size: 1.05rem;
+            line-height: 1.35;
+            font-weight: 650;
+        }}
+        .tile-title a {{
+            color: #24313d;
+            text-decoration: none;
+        }}
+        .tile-title a:hover {{
+            color: #286b9f;
+            text-decoration: underline;
+        }}
+        .tile-date {{
+            font-size: 0.82rem;
+            color: #6a7884;
+            margin: 0.15rem 0 0.7rem;
+        }}
+        .tile-thumb {{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1 / 1;
+            background: #f3f6f8;
+            border-radius: 6px;
+            overflow: hidden;
+            text-decoration: none;
+        }}
+        .tile-thumb img, .tile-thumb video {{
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }}
+        .tile-placeholder {{
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 1.6rem;
+            font-weight: 650;
+            color: #9aa8b3;
+        }}
+        .tile-summary {{
+            margin-top: 0.75rem;
+            font-size: 0.92rem;
+            line-height: 1.5;
+            color: #43525e;
+        }}
+        .report-back {{
+            display: inline-block;
+            margin-bottom: 0.75rem;
+            color: #286b9f;
+            text-decoration: none;
+            font-weight: 600;
+        }}
+        .report-back:hover {{
+            text-decoration: underline;
+        }}
         .no-reports {{
             text-align: center;
             padding: 3rem;
@@ -633,6 +702,9 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             }}
             .container {{ max-width: none; padding: 0.65rem 0; }}
             .reports-list {{ gap: 0.65rem; }}
+            .report-tiles {{ gap: 0.65rem; }}
+            .report-tile {{ border-left: 0; border-right: 0; border-radius: 0; padding: 0.85rem 0.9rem 1rem; }}
+            .report-back {{ margin: 0.25rem 0.9rem 0.5rem; }}
             .report-card {{ border-left: 0; border-right: 0; border-radius: 0; }}
             .report-header {{ padding: 0.85rem 0.9rem; gap: 0.6rem; }}
             .report-title-row {{ font-size: 1rem; gap: 0.35rem; }}
@@ -715,6 +787,11 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
 
         window.addEventListener('DOMContentLoaded', function() {{
             const hash = window.location.hash.substring(1);
+            // Old reports.html#<slug> deep links now go to the report's own page.
+            if (hash && document.getElementById('tile-' + hash)) {{
+                window.location.replace('report-' + hash + '.html');
+                return;
+            }}
             if (hash) {{
                 const details = document.getElementById('details-' + hash);
                 if (details) {{
@@ -1118,6 +1195,45 @@ def _rewrite_relative_images(content, report_dir):
     )
 
 
+def _rewrite_relative_links(content, report_dir):
+    """Resolve ordinary report-local links from the catalog page.
+
+    Reports are authored relative to their own source file, but all reports are
+    rendered into the root-level reports.html page. Rebase local Markdown links
+    onto the data-root layout and place them behind the source/ URL namespace.
+    The server exposes only files explicitly referenced by the rendered page.
+
+    Targets outside the data root are left unchanged; external, root-relative,
+    and in-page links are untouched.
+    """
+    def replace(m):
+        label, target = m.group(1), m.group(2)
+        if re.match(r'^(?:[a-z][a-z0-9+.-]*:|//|/|#)', target, re.IGNORECASE):
+            return m.group(0)
+
+        # Preserve query/fragment suffixes while normalizing only the path.
+        match = re.match(r'^([^?#]*)(.*)$', target)
+        path, suffix = match.group(1), match.group(2)
+        # Links to generated catalog siblings are already relative to the
+        # root-level reports.html page. Rebasing them under the report source
+        # directory would make e.g. ``protocols.html#6`` point at a nonexistent
+        # ``source/reports/CODE/protocols.html#6`` file.
+        if path in {
+            "index.html", "experiments.html", "protocols.html", "reports.html",
+            "presentations.html", "documents.html", "posters.html", "sdgl.html",
+        }:
+            return m.group(0)
+        resolved = posixpath.normpath(f"{report_dir}/{path}")
+        if resolved == ".." or resolved.startswith("../"):
+            return m.group(0)
+        if path.endswith("/") and not resolved.endswith("/"):
+            resolved += "/"
+        return f"[{label}](source/{resolved}{suffix})"
+
+    # The negative lookbehind keeps image syntax for _rewrite_relative_images.
+    return re.sub(r'(?<!!)\[([^\]]+)\]\(([^)]+)\)', replace, content)
+
+
 def _rewrite_relative_embeds(content, report_dir):
     """Resolve report-local interactive embeds from the catalog page."""
     return re.sub(
@@ -1309,6 +1425,88 @@ def _provenance_footer(artifacts):
             f'<ul>{items}</ul></div>')
 
 
+SUMMARY_RE = re.compile(r'^\*\*Summary:\*\*\s*(.+?)\s*(?:\n\s*\n|\Z)', re.MULTILINE | re.DOTALL)
+_SENTENCE_END = re.compile(r'(?<=[.!?])\s+(?=[A-Z0-9(])')
+
+
+def _plain_text(md):
+    """Strip inline Markdown (links, emphasis, code, HTML) down to readable text."""
+    text = re.sub(r'!\[[^\]]*\]\([^)]*\)', '', md)
+    text = re.sub(r'\[([^\]]+)\]\([^)]*\)', r'\1', text)
+    text = re.sub(r'<[^>]+>', '', text)
+    text = re.sub(r'(\*\*|__|\*|_|`)', '', text)
+    return ' '.join(text.split())
+
+
+def extract_summary(content, max_sentences=2):
+    """The at-a-glance description shown on the reports index.
+
+    An explicit ``**Summary:** …`` paragraph wins. Otherwise the first prose
+    paragraph is used (skipping headings, ``**Key:**`` front matter, the
+    ``{{experiments}}`` token, images, lists, tables, math and HTML), trimmed to
+    *max_sentences*. Returns plain text, or ``""`` when the report has no prose.
+    """
+    m = SUMMARY_RE.search(content)
+    if m:
+        return _plain_text(m.group(1))
+    for para in re.split(r'\n\s*\n', content):
+        para = para.strip()
+        if not para or para[0] in '#!|<>-*+$`{' or re.match(r'\d+\.\s', para):
+            continue
+        if para.startswith('**') and re.match(r'\*\*[^*]+:\*\*', para):
+            continue
+        text = _plain_text(para)
+        if not text:
+            continue
+        sentences = _SENTENCE_END.split(text)
+        return ' '.join(sentences[:max_sentences])
+    return ""
+
+
+def series_thumbnail(code, eln_conn, root):
+    """Relative URL of a session thumbnail for series *code* (the lowest active
+    repetition that has one on disk), or None."""
+    if not code:
+        return None
+    try:
+        rows = eln_conn.execute(
+            "SELECT e.thumbnail_path FROM experiments e "
+            "JOIN experiment_codes c ON c.title = e.experiment_type "
+            "WHERE c.code = ? AND e.excluded = 0 AND e.thumbnail_path IS NOT NULL "
+            "AND e.thumbnail_path != '' ORDER BY e.repetition",
+            (code,),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return None  # a DB without the experiments/thumbnail columns
+    for row in rows:
+        name = Path(row["thumbnail_path"]).name
+        if (Path(root) / "thumbnails" / name).is_file():
+            return f"thumbnails/{name}"
+    return None
+
+
+def first_image(content):
+    """First local Markdown image in (already path-rewritten) *content*, or None."""
+    for m in re.finditer(r'!\[[^\]]*\]\(([^)\s]+)[^)]*\)', content):
+        src = m.group(1)
+        if not re.match(r'^(?:[a-z]+:|//)', src, re.IGNORECASE):
+            return src
+    return None
+
+
+_VIDEO_EXT = (".mp4", ".webm", ".mov")
+
+
+# An explicit preview for the reports index, relative to the report's folder.
+THUMBNAIL_RE = re.compile(r'^\*\*Thumbnail:\*\*[ \t]*(\S+)[ \t]*\n?', re.MULTILINE)
+
+
+def report_page_name(slug):
+    """File name of a report's own page, flat next to ``reports.html`` so the
+    report's relative media links resolve unchanged."""
+    return f"report-{slug}.html"
+
+
 def discover_report_files(reports_dir, suffixes=(".md", ".ipynb")):
     """Return report files under *reports_dir* (recursively), newest first.
 
@@ -1330,13 +1528,21 @@ def discover_report_files(reports_dir, suffixes=(".md", ".ipynb")):
 
 def generate_reports(root, catalog_out=None, plugins=None, only=None,
                      output_name="reports.html"):
-    """Generate ``reports.html`` from markdown reports under *root*.
+    """Generate the reports index and one page per report under *root*.
 
     *root* is the data-repo directory holding ``reports/``, ``experiments.db`` and
     the optional ``sdgl.db``. Output is written to *catalog_out* (default ``root/catalog``).
-    *plugins* (default: discovered) supply extra nav links. *only* (a path relative
-    to *root*, e.g. ``reports/weekly/x.md``) restricts the page to a single report —
-    used by the static-bundle export — and *output_name* names the output file.
+    *plugins* (default: discovered) supply extra nav links.
+
+    ``reports.html`` (*output_name*) is an index of tiles — title, a large
+    thumbnail and a one- or two-sentence summary — each linking to the report's
+    own page, ``report-<slug>.html``, written alongside it. Pages of reports that
+    no longer exist are removed.
+
+    *only* (a path relative to *root*, e.g. ``reports/weekly/x.md``) instead writes
+    that single report's page, without its Code view, to *output_name* — used by
+    the single-report static export. Returns the path of the page written to
+    *output_name*.
     """
     root = Path(root)
     reports_dir = root / "reports"
@@ -1354,6 +1560,10 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
         only_path = (root / only).resolve()
         report_files = [p for p in report_files if p.resolve() == only_path]
 
+    nav = render_nav(plugins)
+    catalog_dir.mkdir(parents=True, exist_ok=True)
+    tiles = []
+    pages = {}
     if not report_files:
         reports_html = '<div class="no-reports">No reports available yet. Create markdown files in the reports/ directory.</div>'
     else:
@@ -1367,8 +1577,7 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
             sdgl_conn = sqlite3.connect(sdgl_db_path)
             sdgl_conn.row_factory = sqlite3.Row
 
-        # A single-report export (``only`` set) renders the report expanded with a
-        # plain, non-collapsible header — there's nothing to collapse it against.
+        # A single-report export (``only`` set) is the narrative report alone.
         standalone = only is not None
         # Sessions with an interactive explorer link it from the overview tables.
         explorers = explorer_links(root)
@@ -1378,7 +1587,6 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
         # import avoids a module-level cycle (code.py imports from this module).
         from eln.generators.code import build_code_index
         code_index = build_code_index(root)
-        reports_html_list = []
         for report_file in report_files:
             nb = None
             if report_file.suffix == ".ipynb":
@@ -1394,7 +1602,11 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
 
             # Fix relative image paths to be relative to catalog directory
             report_dir = report_file.parent.relative_to(root)
+            # ``**Thumbnail:** file`` only picks the index preview; it isn't prose.
+            thumb_decl = THUMBNAIL_RE.search(content)
+            content = THUMBNAIL_RE.sub("", content)
             content = _rewrite_relative_images(content, report_dir)
+            content = _rewrite_relative_links(content, report_dir)
             content = _rewrite_relative_embeds(content, report_dir)
 
             html_content = markdown_to_html(content)
@@ -1466,21 +1678,19 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
                 toggle = ""
                 code_pane = ""
 
-            header_cls = "report-header standalone" if standalone else "report-header"
-            header_onclick = "" if standalone else f" onclick=\"toggleReport('{slug}')\""
-            expand_icon = "" if standalone else (
-                f'<span class="expand-icon" id="icon-{slug}">&#9658;</span>\n                            ')
-            details_style = ' style="display: block;"' if standalone else ""
-
-            reports_html_list.append(f"""
+            # A report's own page: the card is always open, with a plain header.
+            back = "" if standalone else (
+                '<a class="report-back" href="reports.html">&larr; All reports</a>')
+            card = f"""
+                {back}
                 <div class="report-card" id="report-{slug}" data-report-src="{rel_src}">
-                    <div class="{header_cls}"{header_onclick}>
+                    <div class="report-header standalone">
                         <div class="report-title-row">
-                            {expand_icon}{title}
+                            {title}
                         </div>
                         <div class="report-date">{report_date}</div>
                     </div>
-                    <div class="report-details" id="details-{slug}"{details_style}>{toggle}
+                    <div class="report-details" id="details-{slug}" style="display: block;">{toggle}
                         <div class="report-view" id="view-{slug}">
                             <div class="report-content">
                                 {html_content}
@@ -1489,27 +1699,57 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
                         </div>{code_pane}
                     </div>
                 </div>
-            """)
+            """
+            page_name = output_name if standalone else report_page_name(slug)
+            pages[page_name] = REPORTS_HTML_TEMPLATE.format(
+                nav=nav, reports_html=card, page_title=_escape(title), page_heading="Reports")
 
-        reports_html = '\n'.join(reports_html_list)
+            # Index tile: title, a large preview (the declared thumbnail, else a
+            # session thumbnail of the series, else the report's first figure) and
+            # the at-a-glance summary.
+            thumb = (posixpath.normpath(f"{report_dir.as_posix()}/{thumb_decl.group(1)}")
+                     if thumb_decl else None)
+            thumb = thumb or series_thumbnail(series_code, eln_conn, root) or first_image(content)
+            if not thumb:
+                thumb_html = f'<span class="tile-placeholder">{_escape(series_code or title[:1])}</span>'
+            elif thumb.lower().endswith(_VIDEO_EXT):
+                # A movie previews as its opening frame (#t= makes mobile paint it).
+                thumb_html = f'<video src="{thumb}#t=0.1" muted playsinline preload="metadata"></video>'
+            else:
+                thumb_html = f'<img src="{thumb}" alt="" loading="lazy">'
+            summary = extract_summary(content)
+            summary_html = f'<p class="tile-summary">{_escape(summary)}</p>' if summary else ""
+            href = report_page_name(slug)
+            tiles.append(f"""
+                <article class="report-tile" id="tile-{slug}" data-report-src="{rel_src}">
+                    <h2 class="tile-title"><a href="{href}">{title}</a></h2>
+                    <div class="tile-date">{report_date}</div>
+                    <a class="tile-thumb" href="{href}" tabindex="-1" aria-hidden="true">{thumb_html}</a>
+                    {summary_html}
+                </article>""")
+
+        reports_html = '<div class="report-tiles">' + ''.join(tiles) + '\n            </div>'
 
         eln_conn.close()
         if sdgl_conn is not None:
             sdgl_conn.close()
 
-    # Generate final HTML
-    html = REPORTS_HTML_TEMPLATE.format(
-        nav=render_nav(plugins),
-        reports_html=reports_html,
-        page_title="Reports",
-        page_heading="Reports",
-    )
+    if only is not None:
+        if not pages:
+            pages[output_name] = REPORTS_HTML_TEMPLATE.format(
+                nav=nav, reports_html=reports_html, page_title="Reports", page_heading="Reports")
+    else:
+        # Drop pages of reports that were removed or renamed since the last build.
+        for stale in catalog_dir.glob(report_page_name("*")):
+            if stale.name not in pages:
+                stale.unlink()
+        pages[output_name] = REPORTS_HTML_TEMPLATE.format(
+            nav=nav, reports_html=reports_html, page_title="Reports", page_heading="Reports")
 
-    # Write to file
-    catalog_dir.mkdir(parents=True, exist_ok=True)
+    for name, html in pages.items():
+        (catalog_dir / name).write_text(html)
+
     output_file = catalog_dir / output_name
-    output_file.write_text(html)
-
     print(f"Reports page generated at: {output_file}")
     print(f"Total reports: {len(report_files)}")
     return output_file

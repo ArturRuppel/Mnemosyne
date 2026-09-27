@@ -148,7 +148,7 @@ def test_report_overview_links_session_explorer(data_root):
     root, db, expected = data_root
     _explorer(root, "TFMSP-02")
     generate_reports(root)
-    html = (root / "catalog" / "reports.html").read_text()
+    html = (root / "catalog" / "report-tfm_progress.html").read_text()
     assert "<th>Explorer</th>" in html
     assert 'href="explorers/TFMSP-02/index.html"' in html
 
@@ -187,7 +187,7 @@ def test_catalog_orders_by_derived_date_and_sinks_undated(data_root):
 def test_reports_inject_series_overview(data_root):
     root, db, expected = data_root
     generate_reports(root)
-    html = (root / "catalog" / "reports.html").read_text()
+    html = (root / "catalog" / "report-tfm_progress.html").read_text()
     # The {{experiments}} token was replaced by the DB-generated overview...
     assert "{{experiments}}" not in html
     assert "exp-overview" in html
@@ -196,7 +196,7 @@ def test_reports_inject_series_overview(data_root):
     assert "TFMSP-03" not in html
     assert "Gel casting" in html
     # The non-series report still renders.
-    assert "Random notes" in html
+    assert "Random notes" in (root / "catalog" / "report-notes.html").read_text()
 
 
 def test_protocols_and_presentations(data_root):
