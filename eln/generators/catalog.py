@@ -97,7 +97,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         .nav {{
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            white-space: nowrap;
             gap: 1rem;
             background: white;
             padding: 0.8rem 1.5rem;

@@ -101,7 +101,7 @@ def generate_presentations(root, catalog_out=None):
         .header {{ background: #0f3d3a; color: white; padding: 1.25rem 1.5rem; }}
         .header h1 {{ font-size: 1.55rem; margin-bottom: 0.25rem; }}
         .header p {{ color: #d2e8e7; }}
-        .nav {{ display: flex; flex-wrap: wrap; gap: 1rem; background: white; padding: 0.8rem 1.5rem; border-bottom: 1px solid #d4d4d8; }}
+        .nav {{ display: flex; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; gap: 1rem; background: white; padding: 0.8rem 1.5rem; border-bottom: 1px solid #d4d4d8; }}
         .nav a {{ color: #6b3fa0; text-decoration: none; font-weight: 650; }}
         .nav a:hover {{ text-decoration: underline; }}
         .container {{ max-width: 1400px; margin: 0 auto; padding: 1.5rem; }}
