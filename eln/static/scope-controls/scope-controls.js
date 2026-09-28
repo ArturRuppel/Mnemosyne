@@ -11,7 +11,7 @@
 // each viewer supplies callbacks that talk to its own renderer, so a
 // server-rendered PNG stack and a Luxar scene share widgets, not a backend.
 
-export const VERSION = "4";
+export const VERSION = "5";
 
 // napari's image-layer blending modes, in napari's menu order.
 export const BLENDINGS = ["translucent", "translucent_no_depth", "additive", "minimum", "opaque"];
@@ -246,6 +246,7 @@ export function layerPanel(options) {
   let layers = (opts.layers || []).map((layer) => ({ ...layer }));
   let selected = opts.selected ?? layers.at(-1)?.id ?? null;
   const continuous = new Set();
+  const zoomed = new Map();
   const groupInfo = new Map((opts.groups || []).map((group) => [group.id, group]));
   const collapsed = new Set((opts.groups || []).filter((group) => group.collapsed).map((group) => group.id));
 
@@ -259,6 +260,8 @@ export function layerPanel(options) {
   const highNumber = el("input", { type: "number", inputmode: "decimal", "aria-label": "Contrast maximum value" });
   const limitsText = el("span", { class: "sc-value" });
   const more = el("button", { class: "sc-icon sc-more", type: "button", "aria-label": "Edit contrast limits", "aria-expanded": "false", text: "⋯" });
+  const zoomIn = el("button", { class: "sc-chip", type: "button", text: "zoom to limits", title: "Spread the slider over the current limits" });
+  const zoomOut = el("button", { class: "sc-chip", type: "button", text: "full range", hidden: true });
   const exact = el("div", { class: "sc-exact", hidden: true },
     el("label", {}, "min", lowNumber), el("label", {}, "max", highNumber));
   const once = el("button", { class: "sc-chip", type: "button", text: "once" });
@@ -279,7 +282,7 @@ export function layerPanel(options) {
     blending: row("blending:", blending),
     limits: row("contrast limits:",
       el("div", { class: "sc-inline" }, el("div", { class: "sc-range" }, rangeFill, lowSlider, highSlider), more),
-      el("div", { class: "sc-limits-text" }, limitsText), exact),
+      el("div", { class: "sc-limits-text" }, limitsText), el("div", { class: "sc-chips" }, zoomIn, zoomOut), exact),
     auto: row("auto-contrast:", el("div", { class: "sc-chips" }, once, opts.autoContrast === "both" ? cont : null)),
     exposure: row("exposure:", el("div", { class: "sc-inline" }, exposure, exposureValue)),
     offset: row("offset:", el("div", { class: "sc-inline" }, offset, offsetValue)),
@@ -384,17 +387,20 @@ export function layerPanel(options) {
     rows.limits.hidden = !hasLimits;
     rows.auto.hidden = !hasLimits || opts.autoContrast === "none";
     if (hasLimits) {
-      const [low, high] = layer.dataRange, span = Math.max(high - low, Number.EPSILON);
-      const step = layer.step ?? (Number.isInteger(low) && Number.isInteger(high) && span > 100 ? 1 : span / 500);
-      for (const input of [lowSlider, highSlider, lowNumber, highNumber]) {
-        input.min = String(low); input.max = String(high); input.step = String(step);
-      }
+      const [dataLow, dataHigh] = layer.dataRange;
+      const [low, high] = sliderRange(layer), span = Math.max(high - low, Number.EPSILON);
+      const step = sliderStep(layer);
+      for (const input of [lowSlider, highSlider]) { input.min = String(low); input.max = String(high); }
+      for (const input of [lowNumber, highNumber]) { input.min = String(dataLow); input.max = String(dataHigh); }
+      for (const input of [lowSlider, highSlider, lowNumber, highNumber]) input.step = String(step);
       lowSlider.value = lowNumber.value = String(layer.limits[0]);
       highSlider.value = highNumber.value = String(layer.limits[1]);
       rangeFill.style.left = `${((layer.limits[0] - low) / span) * 100}%`;
       rangeFill.style.right = `${100 - ((layer.limits[1] - low) / span) * 100}%`;
-      const digits = digitsFor(span);
-      limitsText.textContent = `${layer.limits[0].toFixed(digits)} – ${layer.limits[1].toFixed(digits)}  (range ${low.toFixed(digits)} – ${high.toFixed(digits)})`;
+      const digits = digitsFor(span), dataDigits = digitsFor(dataHigh - dataLow);
+      const shown = zoomed.has(layer.id) ? `slider ${low.toFixed(digits)} – ${high.toFixed(digits)} of ` : "range ";
+      limitsText.textContent = `${layer.limits[0].toFixed(digits)} – ${layer.limits[1].toFixed(digits)}  (${shown}${dataLow.toFixed(dataDigits)} – ${dataHigh.toFixed(dataDigits)})`;
+      zoomOut.hidden = !zoomed.has(layer.id);
       cont.setAttribute("aria-pressed", String(continuous.has(layer.id)));
     }
     rows.exposure.hidden = layer.exposure === undefined;
@@ -411,13 +417,34 @@ export function layerPanel(options) {
     }
   }
 
+  // The slider spans the data range, or a narrower window after "zoom to
+  // limits". The window is dropped once the limits leave it, e.g. after an
+  // auto-contrast or a typed value.
+  function sliderRange(layer) {
+    const [dataLow, dataHigh] = layer.dataRange, view = zoomed.get(layer.id);
+    if (!view) return layer.dataRange;
+    const low = Math.max(view[0], dataLow), high = Math.min(view[1], dataHigh);
+    if (high > low && layer.limits[0] >= low && layer.limits[1] <= high) return [low, high];
+    zoomed.delete(layer.id);
+    return layer.dataRange;
+  }
+
+  // Integer data moves by whole counts at any zoom; other data by 1/500 of
+  // what the slider shows.
+  function sliderStep(layer) {
+    const [dataLow, dataHigh] = layer.dataRange, [low, high] = sliderRange(layer);
+    if (layer.step != null) return layer.step;
+    if (Number.isInteger(dataLow) && Number.isInteger(dataHigh) && dataHigh - dataLow > 100) return 1;
+    return Math.max(high - low, Number.EPSILON) / 500;
+  }
+
   function readContrast(source, commit) {
     const layer = current();
     if (!layer?.dataRange) return;
     const [dataLow, dataHigh] = layer.dataRange;
     let low = Number(source === "number" ? lowNumber.value : lowSlider.value);
     let high = Number(source === "number" ? highNumber.value : highSlider.value);
-    const gap = Math.max((dataHigh - dataLow) / 500, Number.EPSILON);
+    const gap = sliderStep(layer);
     if (low > high - gap) {
       if (document.activeElement === lowSlider || document.activeElement === lowNumber) low = high - gap;
       else high = low + gap;
@@ -452,6 +479,15 @@ export function layerPanel(options) {
     if (!live) slider.addEventListener("change", () => readContrast("slider", true));
   }
   for (const number of [lowNumber, highNumber]) number.addEventListener("change", () => readContrast("number", true));
+  zoomIn.addEventListener("click", () => {
+    const layer = current(); if (!layer?.dataRange) return;
+    const [low, high] = layer.limits, pad = Math.max((high - low) / 2, sliderStep(layer) * 10);
+    let view = [Math.max(layer.dataRange[0], low - pad), Math.min(layer.dataRange[1], high + pad)];
+    if (sliderStep(layer) === 1) view = [Math.floor(view[0]), Math.ceil(view[1])];
+    zoomed.set(layer.id, view);
+    renderControls();
+  });
+  zoomOut.addEventListener("click", () => { const layer = current(); if (layer) { zoomed.delete(layer.id); renderControls(); } });
   more.addEventListener("click", () => { exact.hidden = !exact.hidden; more.setAttribute("aria-expanded", String(!exact.hidden)); });
   once.addEventListener("click", () => { const layer = current(); if (layer) { continuous.delete(layer.id); autoContrast(layer.id); } });
   cont.addEventListener("click", () => {
@@ -479,6 +515,7 @@ export function layerPanel(options) {
       const previous = selected;
       layers = next.map((layer) => ({ ...layer }));
       for (const id of [...continuous]) if (!layers.some((layer) => layer.id === id)) continuous.delete(id);
+      for (const id of [...zoomed.keys()]) if (!layers.some((layer) => layer.id === id)) zoomed.delete(id);
       if (!keepSelection || !layers.some((layer) => layer.id === selected)) selected = layers.at(-1)?.id ?? null;
       renderList();
       renderControls();
