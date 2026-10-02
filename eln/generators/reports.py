@@ -153,7 +153,7 @@ def markdown_to_html(text):
         frame = (
             f'<iframe class="report-embed" src="{src}" '
             'title="Interactive report explorer" loading="lazy" '
-            'onload="this.style.height=(this.contentWindow.document.documentElement.scrollHeight+24)+\'px\'">'
+            'onload="try{this.style.height=(this.contentWindow.document.documentElement.scrollHeight+24)+\'px\'}catch(e){/* Local-file frames retain their default scrollable height. */}">'
             '</iframe>'
         )
         text = text.replace(f'<p>{token}</p>', frame).replace(token, frame)
