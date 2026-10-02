@@ -31,8 +31,8 @@ dependencies = [
 thumbnails = ["numpy", "Pillow", "tifffile", "zarr"]
 
 [project.urls]
-Homepage = "https://github.com/arturruppel/electronic_labbook"
-Repository = "https://github.com/arturruppel/electronic_labbook"
+Homepage = "https://github.com/ArturRuppel/Mnemosyne"
+Repository = "https://github.com/ArturRuppel/Mnemosyne"
 
 [project.scripts]
 labbook = "eln.cli:main"
