@@ -11,6 +11,7 @@ import re
 import sqlite3
 from pathlib import Path
 
+from eln.generators.chrome import bake
 from eln.generators.nav import render_nav
 
 DEFAULT_DB_NAME = "experiments.db"
@@ -98,54 +99,13 @@ def markdown_to_html(text):
 
 
 PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-home="teal">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Protocols</title>
     <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
-        body {{
-            font-family: 'Archivo', system-ui, -apple-system, sans-serif;
-            line-height: 1.6;
-            color: #1c1b22;
-            background: #f3f3f4;
-        }}
-        .header {{
-            background: #0f3d3a;
-            color: white;
-            padding: 1.25rem 1.5rem;
-        }}
-        .header h1 {{
-            font-size: 1.55rem;
-            margin-bottom: 0.25rem;
-        }}
-        .header p {{
-            color: #d2e8e7;
-        }}
-        .nav {{
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            white-space: nowrap;
-            gap: 1rem;
-            background: white;
-            padding: 0.8rem 1.5rem;
-            border-bottom: 1px solid #d4d4d8;
-        }}
-        .nav a {{
-            color: #6b3fa0;
-            text-decoration: none;
-            font-weight: 650;
-        }}
-        .nav a:hover {{
-            text-decoration: underline;
-        }}
-        .container {{
+        /*@HOUSE_CSS@*/        .container {{
             max-width: 1000px;
             margin: 0 auto;
             padding: 1.5rem;
@@ -156,9 +116,9 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             gap: 1rem;
         }}
         .protocol-group {{
-            background: white;
-            border: 1px solid #d4d4d8;
-            border-radius: 8px;
+            background: var(--hm-raised);
+            border: 0; border-top: 2px solid var(--hm-ink);
+            border-radius: 0;
             margin-bottom: 1rem;
             overflow: hidden;
         }}
@@ -171,7 +131,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             transition: background-color 0.2s;
         }}
         .protocol-header:hover {{
-            background-color: #f8f8f9;
+            background-color: var(--hm-n100);
         }}
         /* Single-protocol export: header is non-interactive, body always open. */
         .protocol-header.standalone {{
@@ -182,8 +142,8 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         .protocol-name {{
             font-size: 1.15rem;
-            font-weight: 650;
-            color: #1c1b22;
+            font-weight: 700;
+            color: var(--hm-ink);
             display: flex;
             align-items: center;
             gap: 1rem;
@@ -193,24 +153,24 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-right: 0.75rem;
             font-size: 1rem;
             transition: transform 0.2s;
-            color: #6b3fa0;
+            color: var(--hm-home);
         }}
         .protocol-details {{
             display: none;
             padding: 1rem 1.5rem 1.5rem 1.5rem;
-            border-top: 1px solid #e8e8ea;
+            border-top: 1px solid var(--hm-n200);
             margin: 0 1rem;
         }}
         .latest-badge {{
-            background: #e5efe9;
-            color: #27735f;
+            background: none; border: 1px solid var(--hm-divider);
+            color: var(--hm-ok);
             padding: 0.15rem 0.55rem;
-            border-radius: 999px;
+            border-radius: 0;
             font-size: 0.8rem;
             font-weight: 700;
         }}
         .protocol-description {{
-            color: #5c5b63;
+            color: var(--hm-dim);
             margin-bottom: 1rem;
             font-size: 1rem;
         }}
@@ -223,8 +183,8 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         .version-selector select {{
             padding: 0.5rem 0.65rem;
-            border: 1px solid #b6b6bc;
-            border-radius: 6px;
+            border: 2px solid var(--hm-divider);
+            border-radius: 0;
             font-size: 0.95rem;
         }}
         .protocol-content {{
@@ -235,19 +195,19 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             font-size: 1.8rem;
             margin-top: 1.5rem;
             margin-bottom: 1rem;
-            color: #1c1b22;
+            color: var(--hm-ink);
         }}
         .protocol-content h2 {{
             font-size: 1.5rem;
             margin-top: 1.5rem;
             margin-bottom: 0.75rem;
-            color: #403f47;
+            color: var(--hm-n800);
         }}
         .protocol-content h3 {{
             font-size: 1.2rem;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
-            color: #403f47;
+            color: var(--hm-n800);
         }}
         .protocol-content ul {{
             margin: 0.5rem 0 0.5rem 2rem;
@@ -256,13 +216,13 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 0.25rem;
         }}
         .protocol-content blockquote {{
-            border-left: 3px solid #0e7c7b;
+            border-left: 3px solid var(--hm-home);
             padding-left: 1rem;
             margin: 1rem 0;
-            color: #403f47;
-            background: white;
+            color: var(--hm-n800);
+            background: var(--hm-raised);
             padding: 0.5rem 1rem;
-            border-radius: 4px;
+            border-radius: 0;
         }}
         .protocol-content table {{
             width: 100%;
@@ -273,7 +233,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             gap: 2rem;
             margin-top: 1rem;
             font-size: 0.9rem;
-            color: #5c5b63;
+            color: var(--hm-dim);
         }}
         .protocol-meta .label {{
             font-weight: 600;
@@ -281,12 +241,12 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
         .no-protocols {{
             text-align: center;
             padding: 3rem;
-            color: #5c5b63;
+            color: var(--hm-dim);
         }}
         .footer {{
             text-align: center;
             padding: 1.5rem;
-            color: #5c5b63;
+            color: var(--hm-dim);
             font-size: 0.85rem;
             margin-top: 2rem;
         }}
@@ -294,13 +254,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
     <script src="auth.js"></script>
-    <div class="header">
-        <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f3f3f4"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
-            <h1>Electronic Lab Notebook</h1>
-        </div>
-        <p style="margin-left: calc(34px + 0.8rem);">Protocols</p>
-    </div>
+    <!--@HEADER Protocols@-->
 
     {nav}
 
@@ -340,7 +294,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
 
                 contentDiv.innerHTML = protocol.content ?
                     `<pre>${{protocol.content}}</pre>` :
-                    '<p style="color: #999;">No content available</p>';
+                    '<p style="color: var(--hm-faint);">No content available</p>';
 
                 let metaHtml = `<div><span class="label">Version:</span> ${{protocol.version}}</div>`;
                 metaHtml += `<div><span class="label">Created:</span> ${{protocol.created_at}}</div>`;
@@ -374,6 +328,7 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
 </body>
 </html>
 """
+PROTOCOLS_HTML_TEMPLATE = bake(PROTOCOLS_HTML_TEMPLATE, template=True)
 
 
 def generate_protocol_catalog(root, catalog_out=None, plugins=None, only=None,
@@ -454,7 +409,7 @@ def generate_protocol_catalog(root, catalog_out=None, plugins=None, only=None,
                 </div>
             """
 
-            content_html = markdown_to_html(latest['content']) if latest.get('content') else '<p style="color: #999;">No content available</p>'
+            content_html = markdown_to_html(latest['content']) if latest.get('content') else '<p style="color: var(--hm-faint);">No content available</p>'
 
             header_cls = "protocol-header standalone" if standalone else "protocol-header"
             header_onclick = "" if standalone else f" onclick=\"toggleProtocol('{latest['id']}')\""
@@ -490,7 +445,7 @@ def generate_protocol_catalog(root, catalog_out=None, plugins=None, only=None,
 
     # Generate final HTML
     html = PROTOCOLS_HTML_TEMPLATE.format(
-        nav=render_nav(plugins),
+        nav=render_nav(plugins, current="protocols.html"),
         protocols_html=protocols_html,
         protocols_json=protocols_json,
     )

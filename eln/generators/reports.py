@@ -18,6 +18,7 @@ from pathlib import Path
 from eln.sdgl import format_experiment_id, parse_code_folder
 from eln.generators.catalog import get_experiment_date_from_files
 from eln.generators.explorers import explorer_cell, explorer_links
+from eln.generators.chrome import bake
 from eln.generators.nav import render_nav
 
 DEFAULT_DB_NAME = "experiments.db"
@@ -166,54 +167,13 @@ def markdown_to_html(text):
 
 
 REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-home="teal">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{page_title}</title>
     <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
-        body {{
-            font-family: 'Archivo', system-ui, -apple-system, sans-serif;
-            line-height: 1.6;
-            color: #1c1b22;
-            background: #f3f3f4;
-        }}
-        .header {{
-            background: #0f3d3a;
-            color: white;
-            padding: 1.25rem 1.5rem;
-        }}
-        .header h1 {{
-            font-size: 1.55rem;
-            margin-bottom: 0.25rem;
-        }}
-        .header p {{
-            color: #d2e8e7;
-        }}
-        .nav {{
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            white-space: nowrap;
-            gap: 1rem;
-            background: white;
-            padding: 0.8rem 1.5rem;
-            border-bottom: 1px solid #d4d4d8;
-        }}
-        .nav a {{
-            color: #6b3fa0;
-            text-decoration: none;
-            font-weight: 650;
-        }}
-        .nav a:hover {{
-            text-decoration: underline;
-        }}
-        .container {{
+        /*@HOUSE_CSS@*/        .container {{
             max-width: 1000px;
             margin: 0 auto;
             padding: 1.5rem;
@@ -230,25 +190,25 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             font-size: 1.8rem;
             margin-top: 1.5rem;
             margin-bottom: 1rem;
-            color: #1c1b22;
+            color: var(--hm-ink);
         }}
         .report-content h2 {{
             font-size: 1.5rem;
             margin-top: 1.5rem;
             margin-bottom: 0.75rem;
-            color: #403f47;
+            color: var(--hm-n800);
         }}
         .report-content h3 {{
             font-size: 1.2rem;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
-            color: #403f47;
+            color: var(--hm-n800);
         }}
         .report-content h4 {{
             font-size: 1.1rem;
             margin-top: 0.75rem;
             margin-bottom: 0.5rem;
-            color: #403f47;
+            color: var(--hm-n800);
         }}
         .report-content ul {{
             margin: 0.5rem 0 0.5rem 2rem;
@@ -257,20 +217,20 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 0.25rem;
         }}
         .report-content code {{
-            background: #f8f8f9;
+            background: var(--hm-n100);
             padding: 0.2rem 0.4rem;
-            border-radius: 3px;
-            font-family: monospace;
+            border-radius: 0;
+            font-family: var(--hm-mono);
             font-size: 0.9em;
         }}
         .report-content blockquote {{
-            border-left: 3px solid #0e7c7b;
+            border-left: 3px solid var(--hm-home);
             padding-left: 1rem;
             margin: 1rem 0;
-            color: #403f47;
-            background: #f8f8f9;
+            color: var(--hm-n800);
+            background: var(--hm-n100);
             padding: 0.5rem 1rem;
-            border-radius: 4px;
+            border-radius: 0;
         }}
         .report-content img {{
             max-width: 100%;
@@ -291,14 +251,14 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             line-height: 1.4;
         }}
         .report-content th {{
-            background: #f8f8f9;
-            color: #3a3940;
+            background: var(--hm-n100);
+            color: var(--hm-n800);
             text-align: left;
-            font-weight: 650;
+            font-weight: 700;
         }}
         .report-content th, .report-content td {{
             padding: 0.48rem 0.6rem;
-            border: 1px solid #dedee2;
+            border: 1px solid var(--hm-n300);
             vertical-align: top;
         }}
         .report-embed {{
@@ -310,9 +270,9 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             background: transparent;
         }}
         .report-card {{
-            background: white;
-            border: 1px solid #d4d4d8;
-            border-radius: 8px;
+            background: var(--hm-raised);
+            border: 0; border-top: 2px solid var(--hm-ink);
+            border-radius: 0;
             margin-bottom: 1rem;
             overflow: hidden;
         }}
@@ -325,7 +285,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             transition: background-color 0.2s;
         }}
         .report-header:hover {{
-            background-color: #f8f8f9;
+            background-color: var(--hm-n100);
         }}
         /* Single-report export: header is non-interactive, body always open. */
         .report-header.standalone {{
@@ -336,15 +296,15 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         .report-title-row {{
             font-size: 1.15rem;
-            font-weight: 650;
-            color: #1c1b22;
+            font-weight: 700;
+            color: var(--hm-ink);
             display: flex;
             align-items: center;
             gap: 1rem;
         }}
         .report-date {{
             font-size: 0.9rem;
-            color: #5c5b63;
+            color: var(--hm-dim);
             font-weight: 500;
         }}
         .expand-icon {{
@@ -352,41 +312,36 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-right: 0.75rem;
             font-size: 1rem;
             transition: transform 0.2s;
-            color: #6b3fa0;
+            color: var(--hm-home);
         }}
         .report-details {{
             display: none;
             padding: 0 1.5rem 1.5rem 1.5rem;
-            border-top: 1px solid #e8e8ea;
+            border-top: 1px solid var(--hm-n200);
             margin: 0 1rem;
         }}
         .report-view-toggle {{
             display: inline-flex;
             margin: 1rem 0 0.25rem 0;
-            border: 1px solid #d4d4d8;
-            border-radius: 6px;
+            border: 2px solid var(--hm-ink);
+            border-radius: 0;
             overflow: hidden;
         }}
         .view-btn {{
-            background: white;
+            background: var(--hm-raised);
             border: none;
-            color: #403f47;
+            color: var(--hm-n800);
             font: inherit;
             font-size: 0.82rem;
             font-weight: 600;
             padding: 0.3rem 0.9rem;
             cursor: pointer;
         }}
-        .view-btn + .view-btn {{
-            border-left: 1px solid #d4d4d8;
-        }}
+        .view-btn + .view-btn {{ border-left: 2px solid var(--hm-ink); }}
         .view-btn:hover {{
-            background: #f8f8f9;
+            background: var(--hm-n100);
         }}
-        .view-btn.active {{
-            background: #6b3fa0;
-            color: white;
-        }}
+        .view-btn.active {{ background: var(--hm-ink); color: var(--hm-ground); }}
         .report-code {{
             margin-top: 0.5rem;
         }}
@@ -403,22 +358,22 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         .nb-prompt {{
             flex: 0 0 auto;
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-family: var(--hm-mono);
             font-size: 0.78rem;
-            color: #5a3389;
+            color: var(--hm-home-hover);
             padding-top: 0.7rem;
             user-select: none;
         }}
         .nb-code {{
             flex: 1 1 auto;
             min-width: 0;
-            background: #f8f8f9;
-            border: 1px solid #e8e8ea;
-            border-radius: 6px;
+            background: var(--hm-n100);
+            border: 1px solid var(--hm-n200);
+            border-radius: 0;
             padding: 0.6rem 0.8rem;
             margin: 0;
             overflow-x: auto;
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-family: var(--hm-mono);
             font-size: 0.85rem;
             line-height: 1.5;
         }}
@@ -428,9 +383,9 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             font: inherit;
         }}
         .code-xref {{
-            color: #6b3fa0;
+            color: var(--hm-home);
             text-decoration: none;
-            border-bottom: 1px dotted #cbb8e6;
+            border-bottom: 1px dotted var(--hm-home-line);
         }}
         .code-xref:hover {{
             text-decoration: underline;
@@ -439,26 +394,26 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin: 0.35rem 0 0 2.5rem;
         }}
         .nb-stream, .nb-out-text, .nb-error {{
-            background: #fafafb;
-            border: 1px solid #f3f3f4;
-            border-radius: 6px;
+            background: var(--hm-n100);
+            border: 1px solid var(--hm-ground);
+            border-radius: 0;
             padding: 0.5rem 0.7rem;
             margin: 0.3rem 0;
             overflow-x: auto;
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-family: var(--hm-mono);
             font-size: 0.82rem;
             line-height: 1.45;
             white-space: pre-wrap;
         }}
         .nb-stderr {{
-            background: #fdf3f3;
-            border-color: #f0dcdc;
-            color: #8a3b3b;
+            background: var(--hm-danger-soft);
+            border-color: var(--hm-danger-soft);
+            color: var(--hm-danger);
         }}
         .nb-error {{
-            background: #fdf3f3;
-            border-color: #f0dcdc;
-            color: #8a3b3b;
+            background: var(--hm-danger-soft);
+            border-color: var(--hm-danger-soft);
+            color: var(--hm-danger);
         }}
         .nb-out-img {{
             max-width: 100%;
@@ -475,7 +430,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             border-collapse: collapse;
         }}
         .nb-out-html th, .nb-out-html td {{
-            border: 1px solid #e8e8ea;
+            border: 1px solid var(--hm-n200);
             padding: 0.25rem 0.5rem;
         }}
         .report-tiles {{
@@ -486,27 +441,27 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         .report-tile {{
             display: flex;
             flex-direction: column;
-            background: white;
-            border: 1px solid #d4d4d8;
-            border-radius: 8px;
+            background: var(--hm-raised);
+            border: 0; border-top: 2px solid var(--hm-ink);
+            border-radius: 0;
             padding: 1rem 1rem 1.1rem;
         }}
         .tile-title {{
             font-size: 1.05rem;
             line-height: 1.35;
-            font-weight: 650;
+            font-weight: 700;
         }}
         .tile-title a {{
-            color: #1c1b22;
+            color: var(--hm-ink);
             text-decoration: none;
         }}
         .tile-title a:hover {{
-            color: #6b3fa0;
+            color: var(--hm-home);
             text-decoration: underline;
         }}
         .tile-date {{
             font-size: 0.82rem;
-            color: #5c5b63;
+            color: var(--hm-dim);
             margin: 0.15rem 0 0.7rem;
         }}
         .tile-thumb {{
@@ -514,8 +469,8 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             align-items: center;
             justify-content: center;
             aspect-ratio: 1 / 1;
-            background: #f8f8f9;
-            border-radius: 6px;
+            background: var(--hm-n100);
+            border-radius: 0;
             overflow: hidden;
             text-decoration: none;
         }}
@@ -525,21 +480,21 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             object-fit: contain;
         }}
         .tile-placeholder {{
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-family: var(--hm-mono);
             font-size: 1.6rem;
-            font-weight: 650;
-            color: #9a9aa1;
+            font-weight: 700;
+            color: var(--hm-faint);
         }}
         .tile-summary {{
             margin-top: 0.75rem;
             font-size: 0.92rem;
             line-height: 1.5;
-            color: #3a3940;
+            color: var(--hm-n800);
         }}
         .report-back {{
             display: inline-block;
             margin-bottom: 0.75rem;
-            color: #6b3fa0;
+            color: var(--hm-home);
             text-decoration: none;
             font-weight: 600;
         }}
@@ -549,31 +504,31 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         .no-reports {{
             text-align: center;
             padding: 3rem;
-            color: #5c5b63;
-            background: white;
-            border: 1px solid #d4d4d8;
-            border-radius: 8px;
+            color: var(--hm-dim);
+            background: var(--hm-raised);
+            border: 0; border-top: 2px solid var(--hm-ink);
+            border-radius: 0;
         }}
         .report-provenance {{ margin-top: 1rem; padding-top: 0.75rem;
-                              border-top: 1px solid #e8e8ea; font-size: 0.85rem;
-                              color: #403f47; }}
+                              border-top: 1px solid var(--hm-n200); font-size: 0.85rem;
+                              color: var(--hm-n800); }}
         .report-provenance h4 {{ font-size: 0.8rem; text-transform: uppercase;
-                                 color: #5c5b63; margin-bottom: 0.4rem; }}
+                                 color: var(--hm-dim); margin-bottom: 0.4rem; }}
         .report-provenance li {{ list-style: none; }}
-        .report-stale {{ background: #fbeede; color: #8a5a1f;
-                         border: 1px solid #eccf9c; border-radius: 6px;
+        .report-stale {{ background: var(--hm-warn-soft); color: var(--hm-warn);
+                         border: 1px solid var(--hm-warn-soft); border-radius: 0;
                          padding: 0.4rem 0.7rem; margin-bottom: 0.6rem; }}
-        .prov-status {{ font-family: monospace; }}
-        .prov-ok {{ color: #27735f; }}
-        .prov-stale {{ color: #8a5a1f; }}
-        .prov-modified {{ color: #8a6d1f; }}
-        .prov-missing {{ color: #8a3b3b; }}
+        .prov-status {{ font-family: var(--hm-mono); }}
+        .prov-ok {{ color: var(--hm-ok); }}
+        .prov-stale {{ color: var(--hm-warn); }}
+        .prov-modified {{ color: var(--hm-warn); }}
+        .prov-missing {{ color: var(--hm-danger); }}
         .exp-overview {{
             margin: 1.5rem 0;
             padding: 1rem 1.25rem;
-            background: #f8f8f9;
-            border: 1px solid #e8e8ea;
-            border-radius: 8px;
+            background: var(--hm-n100);
+            border: 1px solid var(--hm-n200);
+            border-radius: 0;
         }}
         .exp-overview-header {{
             display: flex;
@@ -582,41 +537,41 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 0.75rem;
         }}
         .exp-overview-code {{
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-weight: 650;
+            font-family: var(--hm-mono);
+            font-weight: 700;
             font-size: 0.9rem;
-            color: #5a3389;
-            background: #eee7f7;
-            border-radius: 4px;
+            color: var(--hm-home-hover);
+            background: var(--hm-home-soft);
+            border-radius: 0;
             padding: 0.15rem 0.5rem;
         }}
         .exp-overview-title {{
             font-size: 1.15rem;
-            font-weight: 650;
-            color: #1c1b22;
+            font-weight: 700;
+            color: var(--hm-ink);
         }}
         .exp-overview table {{
             width: 100%;
             border-collapse: collapse;
             font-size: 0.88rem;
-            background: white;
-            border: 1px solid #e8e8ea;
-            border-radius: 6px;
+            background: var(--hm-raised);
+            border: 1px solid var(--hm-n200);
+            border-radius: 0;
             overflow: hidden;
         }}
         .exp-overview th {{
-            background: #f8f8f9;
-            color: #403f47;
+            background: var(--hm-raised);
+            color: var(--hm-dim);
             text-align: left;
             padding: 0.5rem 0.65rem;
-            font-size: 0.72rem;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 700; letter-spacing: .08em;
             text-transform: uppercase;
-            border-bottom: 1px solid #e8e8ea;
+            border-bottom: 1px solid var(--hm-divider);
         }}
         .exp-overview td {{
             padding: 0.5rem 0.65rem;
-            border-bottom: 1px solid #f3f3f4;
+            border-bottom: 1px solid var(--hm-ground);
             vertical-align: top;
         }}
         .exp-overview tr:last-child td {{
@@ -625,21 +580,21 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         .exp-overview .explorer-link {{
             display: inline-block;
             padding: 0.15rem 0.55rem;
-            border-radius: 6px;
-            background: #6b3fa0;
+            border-radius: 0;
+            background: var(--hm-home);
             color: #fff;
-            font-weight: 650;
+            font-weight: 700;
             font-size: 0.78rem;
             text-decoration: none;
             white-space: nowrap;
         }}
         .exp-overview .explorer-link:hover {{
-            background: #4a2a78;
+            background: var(--hm-home-pressed);
         }}
         .exp-overview .exp-id {{
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-weight: 650;
-            color: #5a3389;
+            font-family: var(--hm-mono);
+            font-weight: 700;
+            color: var(--hm-home-hover);
             white-space: nowrap;
         }}
         .exp-overview .tag-chips {{
@@ -649,23 +604,23 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         .exp-overview .tag-chip {{
             display: inline-block;
-            border-radius: 999px;
-            background: #eee7f7;
-            color: #5a3389;
+            border-radius: 0;
+            background: none; border: 1px solid var(--hm-divider);
+            color: var(--hm-ink);
             font-size: 0.72rem;
             font-weight: 600;
             padding: 0.1rem 0.5rem;
         }}
         .exp-overview .date-missing {{
-            color: #9a9aa1;
+            color: var(--hm-faint);
         }}
         .exp-overview-protocols {{
             margin-top: 0.75rem;
             font-size: 0.9rem;
-            color: #403f47;
+            color: var(--hm-n800);
         }}
         .exp-overview-protocols a {{
-            color: #6b3fa0;
+            color: var(--hm-home);
             text-decoration: none;
             font-weight: 600;
         }}
@@ -673,36 +628,25 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             text-decoration: underline;
         }}
         .exp-overview-error {{
-            color: #9a3b3b;
-            background: #fbeaea;
-            border: 1px solid #e6c4c4;
-            border-radius: 6px;
+            color: var(--hm-danger);
+            background: var(--hm-danger-soft);
+            border: 1px solid var(--hm-danger-soft);
+            border-radius: 0;
             padding: 0.6rem 0.9rem;
             font-size: 0.9rem;
         }}
         .exp-overview-empty {{
-            color: #5c5b63;
+            color: var(--hm-dim);
             font-style: italic;
         }}
         .footer {{
             text-align: center;
             padding: 1.5rem;
-            color: #5c5b63;
+            color: var(--hm-dim);
             font-size: 0.85rem;
             margin-top: 2rem;
         }}
-        @media (max-width: 640px) {{
-            .header {{ padding: 0.8rem 0.9rem; }}
-            .header h1 {{ font-size: 1.25rem; }}
-            .header p {{ margin-left: 0 !important; font-size: 0.9rem; }}
-            .nav {{
-                flex-wrap: nowrap;
-                gap: 0.9rem;
-                padding: 0.65rem 0.9rem;
-                overflow-x: auto;
-                white-space: nowrap;
-            }}
-            .container {{ max-width: none; padding: 0.65rem 0; }}
+        @media (max-width: 640px) {{            .container {{ max-width: none; padding: 0.65rem 0; }}
             .reports-list {{ gap: 0.65rem; }}
             .report-tiles {{ gap: 0.65rem; }}
             .report-tile {{ border-left: 0; border-right: 0; border-radius: 0; padding: 0.85rem 0.9rem 1rem; }}
@@ -742,13 +686,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
     <script src="auth.js"></script>
-    <div class="header">
-        <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f3f3f4"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
-            <h1>Electronic Lab Notebook</h1>
-        </div>
-        <p style="margin-left: calc(34px + 0.8rem);">{page_heading}</p>
-    </div>
+    <!--@HEADER {page_heading}@-->
 
     {nav}
 
@@ -809,6 +747,7 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
 </body>
 </html>
 """
+REPORTS_HTML_TEMPLATE = bake(REPORTS_HTML_TEMPLATE, template=True)
 
 
 # The series declaration captures any 5-char token; the SDGL code grammar (which
@@ -1562,7 +1501,7 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
         only_path = (root / only).resolve()
         report_files = [p for p in report_files if p.resolve() == only_path]
 
-    nav = render_nav(plugins)
+    nav = render_nav(plugins, current="reports.html")
     catalog_dir.mkdir(parents=True, exist_ok=True)
     tiles = []
     pages = {}

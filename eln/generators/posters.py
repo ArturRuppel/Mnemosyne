@@ -14,6 +14,7 @@ import html
 import json
 from pathlib import Path
 
+from eln.generators.chrome import bake
 from eln.generators.nav import render_nav
 
 POSTERS_DIRNAME = "posters"
@@ -274,59 +275,45 @@ def generate_posters(root, catalog_out=None):
                 '<code>posters/</code> folder, then use “+ Add poster”.</div>')
 
     html_doc = f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-home="teal">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Posters</title>
     <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: 'Archivo', system-ui, -apple-system, sans-serif; line-height: 1.6; color: #1c1b22; background: #f3f3f4; }}
-        .header {{ background: #0f3d3a; color: white; padding: 1.25rem 1.5rem; }}
-        .header h1 {{ font-size: 1.55rem; margin-bottom: 0.25rem; }}
-        .header p {{ color: #d2e8e7; }}
-        .nav {{ display: flex; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; gap: 1rem; background: white; padding: 0.8rem 1.5rem; border-bottom: 1px solid #d4d4d8; }}
-        .nav a {{ color: #6b3fa0; text-decoration: none; font-weight: 650; }}
-        .nav a:hover {{ text-decoration: underline; }}
-        .container {{ max-width: 1400px; margin: 0 auto; padding: 1.5rem; }}
+        /*@HOUSE_CSS@*/        .container {{ max-width: 1400px; margin: 0 auto; padding: 1.5rem; }}
         .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }}
-        .stat-card {{ background: white; padding: 1rem 1.25rem; border: 1px solid #d4d4d8; border-radius: 8px; }}
-        .stat-card .number {{ font-size: 1.5rem; font-weight: 700; color: #0e7c7b; }}
-        .stat-card .label {{ color: #5c5b63; margin-top: 0.25rem; font-size: 0.85rem; }}
+        .stat-card {{ background: var(--hm-raised); padding: 1rem 1.25rem; border: 0; border-top: 2px solid var(--hm-ink); border-radius: 0; }}
+        .stat-card .number {{ font-size: 1.5rem; font-weight: 700; color: var(--hm-home); }}
+        .stat-card .label {{ color: var(--hm-dim); margin-top: 0.25rem; font-size: 0.85rem; }}
         .poster-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; }}
-        .poster-card {{ background: white; border: 1px solid #d4d4d8; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }}
-        .poster-open {{ display: block; background: #f8f8f9; cursor: zoom-in; }}
-        .poster-img {{ display: block; width: 100%; height: 260px; object-fit: contain; background: white; }}
-        .poster-missing {{ height: 260px; display: flex; align-items: center; justify-content: center; color: #b04a4a; background: #fbf3f3; font-size: 0.9rem; }}
-        .poster-title {{ padding: 0.75rem 1rem; font-weight: 600; border-top: 1px solid #e8e8ea; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }}
-        .empty {{ background: white; border: 1px dashed #c4c4ca; border-radius: 8px; padding: 2.5rem; text-align: center; color: #5c5b63; }}
-        .empty code {{ background: #f3f3f4; padding: 0.1rem 0.35rem; border-radius: 4px; }}
-        .footer {{ text-align: center; padding: 1.5rem; color: #5c5b63; font-size: 0.85rem; margin-top: 2rem; }}
+        .poster-card {{ background: var(--hm-raised); border: 0; border-top: 2px solid var(--hm-ink); border-radius: 0; overflow: hidden; display: flex; flex-direction: column; }}
+        .poster-open {{ display: block; background: var(--hm-n100); cursor: zoom-in; }}
+        .poster-img {{ display: block; width: 100%; height: 260px; object-fit: contain; background: var(--hm-raised); }}
+        .poster-missing {{ height: 260px; display: flex; align-items: center; justify-content: center; color: var(--hm-danger); background: var(--hm-danger-soft); font-size: 0.9rem; }}
+        .poster-title {{ padding: 0.75rem 1rem; font-weight: 600; border-top: 1px solid var(--hm-n200); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }}
+        .empty {{ background: var(--hm-raised); border: 1px dashed var(--hm-n400); border-radius: 0; padding: 2.5rem; text-align: center; color: var(--hm-dim); }}
+        .empty code {{ background: var(--hm-ground); padding: 0.1rem 0.35rem; border-radius: 0; }}
+        .footer {{ text-align: center; padding: 1.5rem; color: var(--hm-dim); font-size: 0.85rem; margin-top: 2rem; }}
         .poster-modal {{ position: fixed; inset: 0; z-index: 10001; }}
         .poster-modal[hidden] {{ display: none; }}
         .poster-modal-stage {{ position: absolute; inset: 0; overflow: hidden; background: rgba(8, 32, 30, 0.94); cursor: grab; touch-action: none; }}
         .poster-modal-stage.grabbing {{ cursor: grabbing; }}
-        .poster-modal-paper {{ position: absolute; top: 0; left: 0; transform-origin: 0 0; background: white; box-shadow: 0 6px 30px rgba(0, 0, 0, 0.45); }}
+        .poster-modal-paper {{ position: absolute; top: 0; left: 0; transform-origin: 0 0; background: var(--hm-raised); box-shadow: 0 6px 30px rgba(0, 0, 0, 0.45); }}
         .poster-modal-img {{ display: block; max-width: 92vw; max-height: 86vh; user-select: none; -webkit-user-drag: none; }}
         .poster-modal-bar {{ position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.7rem 1rem; color: white; pointer-events: none; background: linear-gradient(rgba(18, 25, 34, 0.78), rgba(18, 25, 34, 0)); }}
-        .poster-modal-title {{ font-weight: 650; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); }}
+        .poster-modal-title {{ font-weight: 700; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); }}
         .poster-modal-actions {{ display: flex; align-items: center; gap: 1rem; }}
-        .poster-modal-hint {{ font-size: 0.8rem; color: #d0d0d5; }}
+        .poster-modal-hint {{ font-size: 0.8rem; color: var(--hm-n300); }}
         .poster-modal-close {{ pointer-events: auto; background: rgba(0, 0, 0, 0.4); border: none; color: white; width: 2rem; height: 2rem; border-radius: 50%; font-size: 1.4rem; line-height: 1; cursor: pointer; }}
         .poster-modal-close:hover {{ background: rgba(0, 0, 0, 0.6); }}
     </style>
 </head>
 <body>
     <script src="auth.js"></script>
-    <div class="header">
-        <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f3f3f4"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
-            <h1>Electronic Lab Notebook</h1>
-        </div>
-        <p style="margin-left: calc(34px + 0.8rem);">Posters</p>
-    </div>
+    <!--@HEADER Posters@-->
 
-    {render_nav()}
+    {render_nav(current="posters.html")}
 
     <div class="container">
         <div class="stats">
@@ -346,6 +333,7 @@ def generate_posters(root, catalog_out=None):
 {POSTER_MODAL_SCRIPT}
 </body>
 </html>"""
+    html_doc = bake(html_doc)
 
     catalog_dir.mkdir(parents=True, exist_ok=True)
     output_file = catalog_dir / "posters.html"

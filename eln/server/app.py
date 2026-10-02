@@ -29,6 +29,7 @@ from flask_cors import CORS
 
 from eln.channels import build_alias_map, canonical_channel
 from eln.generators import generate_all
+from eln.generators.chrome import bake
 from eln.generators.reports import discover_report_files
 from eln.plugins import discover_plugins, effective_scan_roots
 from eln.sdgl import (
@@ -76,7 +77,7 @@ PWA_HEAD_SNIPPET = '''
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/archivo.css">
-<meta name="theme-color" content="#0f3d3a">
+<meta name="theme-color" content="#f3f3f4">
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
@@ -193,7 +194,8 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
             filepath = assets / filename
         if not filepath.exists():
             return "Not found", 404
-        html = filepath.read_text(encoding="utf-8")
+        # The static frontend pages carry the chrome markers; generated pages are already baked.
+        html = bake(filepath.read_text(encoding="utf-8"))
         # Strip auth.js (no password prompt locally), make the page installable as
         # a PWA (head), and inject the edit overlay (body).
         html = _AUTH_SCRIPT_RE.sub("", html)

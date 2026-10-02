@@ -121,7 +121,7 @@ def generate_documents(root, catalog_out=None, plugins=None):
                           'Add a folder with a markdown file under documents/.</div>')
 
     html = REPORTS_HTML_TEMPLATE.format(
-        nav=render_nav(plugins),
+        nav=render_nav(plugins, current="documents.html"),
         reports_html=documents_html,
         page_title="Documents",
         page_heading="Documents",

@@ -1,43 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-home="teal">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Explorer</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            min-height: 100vh;
-            font-family: "Archivo", system-ui, -apple-system, sans-serif;
-            color: #1c1b22;
-            background: #f3f3f4;
-        }
-        .header { background: #0f3d3a; color: white; padding: 1.25rem 1.5rem; line-height: 1.6; }
-        .header h1 { font-size: 1.55rem; margin-bottom: 0.25rem; }
-        .header p { color: #d2e8e7; }
-        .nav {
-            display: flex; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; gap: 1rem; background: white;
-            padding: 0.8rem 1.5rem; border-bottom: 1px solid #d4d4d8;
-        }
-        .nav a { color: #6b3fa0; font-weight: 650; text-decoration: none; }
-        .shell {
+        /*@HOUSE_CSS@*/        .shell {
             display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 1rem;
             min-height: calc(100vh - 134px); padding: 1rem;
         }
-        .panel { background: white; border: 1px solid #d4d4d8; border-radius: 8px; min-width: 0; }
+        .panel { background: var(--hm-raised); border: 0; border-top: 2px solid var(--hm-ink); border-radius: 0; min-width: 0; }
         .toolbar {
             display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-            gap: 0.75rem; padding: 0.75rem; border-bottom: 1px solid #d4d4d8;
+            gap: 0.75rem; padding: 0.75rem; border-bottom: 1px solid var(--hm-n300);
         }
-        button {
-            border: 1px solid #b6b6bc; border-radius: 6px; background: #f8f8f9; color: #1c1b22;
-            cursor: pointer; font: inherit; font-weight: 650; min-height: 2.1rem; padding: 0.4rem 0.75rem;
-        }
-        button:hover { background: #eaeaec; }
-        button.active { border-color: #0e7c7b; background: #0e7c7b; color: white; }
-        button.primary { border-color: #5a3389; background: #6b3fa0; color: white; }
+        button { border: 2px solid var(--hm-ink); border-radius: 0; background: none; color: var(--hm-ink); cursor: pointer; font: 800 13px/1 var(--hm-font); min-height: 2.1rem; padding: 0.4rem 0.75rem; }
+        button:hover { background: var(--hm-n200); }
+        button.active { border-color: var(--hm-ink); background: var(--hm-ink); color: var(--hm-ground); }
+        button.primary { background: var(--hm-home); border-color: var(--hm-home); color: var(--hm-on-home); }
         input[type="search"] {
-            width: min(100%, 22rem); border: 1px solid #b6b6bc; border-radius: 6px;
+            width: min(100%, 22rem); border: 2px solid var(--hm-divider); border-radius: 0;
             padding: 0.5rem 0.65rem; font: inherit;
         }
         .view { display: none; height: calc(100vh - 203px); min-height: 520px; overflow: auto; }
@@ -51,17 +33,17 @@
         .backup-btn:disabled { opacity: 0.5; cursor: default; }
         .backup-panel { padding: 0.6rem; }
         .backup-panel .row { margin: 0.3rem 0; }
-        .backup-panel .warn { color: #b25b00; }
+        .backup-panel .warn { color: var(--hm-warn); }
         .backup-panel progress { width: 100%; }
         .row {
             display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem;
-            border-radius: 6px; cursor: pointer; user-select: none;
+            border-radius: 0; cursor: pointer; user-select: none;
         }
-        .row:hover { background: #f3f3f4; }
-        .row.selected { background: #ece4f6; outline: 1px solid #c6b2e3; }
+        .row:hover { background: var(--hm-ground); }
+        .row.selected { background: var(--hm-home-soft); outline: 1px solid var(--hm-home-line); }
         .row.dimmed { opacity: 0.32; }
         .twisty {
-            flex: 0 0 1.1rem; text-align: center; color: #5c5b63; font-size: 0.8rem;
+            flex: 0 0 1.1rem; text-align: center; color: var(--hm-dim); font-size: 0.8rem;
             transition: transform 0.12s ease;
         }
         .twisty.spacer { visibility: hidden; }
@@ -69,28 +51,28 @@
         .dot { flex: 0 0 0.6rem; width: 0.6rem; height: 0.6rem; border-radius: 50%; }
         .row-label { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .row-id {
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            color: #5a3389; font-weight: 700;
+            font-family: var(--hm-mono);
+            color: var(--hm-home-hover); font-weight: 700;
         }
-        .row-meta { color: #5c5b63; font-weight: 400; font-size: 0.85rem; }
+        .row-meta { color: var(--hm-dim); font-weight: 400; font-size: 0.85rem; }
         .badge {
-            margin-left: auto; flex: 0 0 auto; background: #eee7f7; color: #5a3389;
-            border-radius: 999px; font-size: 0.75rem; font-weight: 700; padding: 0.05rem 0.45rem;
+            margin-left: auto; flex: 0 0 auto; background: none; border: 1px solid var(--hm-divider); color: var(--hm-ink);
+            border-radius: 0; font-size: 0.75rem; font-weight: 700; padding: 0.05rem 0.45rem;
         }
-        .badge.warn { background: #f6e7c8; color: #8a6320; }
-        .badge.muted { background: #ececee; color: #5c5b63; }
-        .badge.derived { background: #ece3f6; color: #6b3fa0; }
-        .badge.curated { background: #f6ead8; color: #9a6516; }
+        .badge.warn { border-color: currentColor; color: var(--hm-warn); }
+        .badge.muted { border-color: currentColor; color: var(--hm-dim); }
+        .badge.derived { border-color: currentColor; color: var(--hm-home); }
+        .badge.curated { border-color: currentColor; color: var(--hm-warn); }
         /* A committed (stamped) artifact: distinct from raw scanned files. */
         .row.artifact > .row-label { font-weight: 600; }
         .prov-status { font-weight: 700; }
-        .prov-status.ok { color: #27735f; }
-        .prov-status.modified { color: #8a6320; }
-        .prov-status.missing { color: #8a3b3b; }
-        .children { margin-left: 1.1rem; border-left: 1px solid #e8e8ea; padding-left: 0.25rem; }
+        .prov-status.ok { color: var(--hm-ok); }
+        .prov-status.modified { color: var(--hm-warn); }
+        .prov-status.missing { color: var(--hm-danger); }
+        .children { margin-left: 1.1rem; border-left: 1px solid var(--hm-n200); padding-left: 0.25rem; }
         .hidden { display: none; }
         .tag-chip {
-            display: inline-block; border-radius: 999px; background: #eee7f7; color: #5a3389;
+            display: inline-block; border-radius: 0; background: none; border: 1px solid var(--hm-divider); color: var(--hm-ink);
             font-size: 0.72rem; font-weight: 600; padding: 0.02rem 0.45rem; margin-left: 0.25rem;
         }
         .entry-icon { flex: 0 0 1rem; text-align: center; }
@@ -99,17 +81,17 @@
         .detail { padding: 1rem; overflow: auto; max-height: calc(100vh - 134px); }
         .detail h2 { font-size: 1.2rem; margin-bottom: 0.35rem; overflow-wrap: anywhere; }
         .detail-section { margin-top: 1rem; }
-        .detail-section h3 { color: #403f47; font-size: 0.82rem; margin-bottom: 0.5rem; text-transform: uppercase; }
+        .detail-section h3 { color: var(--hm-n800); font-size: 0.82rem; margin-bottom: 0.5rem; text-transform: uppercase; }
         .kv { display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: 0.35rem 0.6rem; font-size: 0.92rem; }
-        .kv dt { color: #5c5b63; font-weight: 650; }
+        .kv dt { color: var(--hm-dim); font-weight: 700; }
         .kv dd { min-width: 0; overflow-wrap: anywhere; }
         .list { display: grid; gap: 0.5rem; }
-        .list-item { border: 1px solid #d4d4d8; border-radius: 6px; padding: 0.6rem; overflow-wrap: anywhere; }
-        .list-item.stale { border-color: #e0c187; background: #fdf7ec; }
-        .muted { color: #5c5b63; }
-        .empty { color: #5c5b63; padding: 1rem; }
-        .status { color: #403f47; font-size: 0.9rem; padding: 1rem; }
-        a.xlink { color: #6b3fa0; font-weight: 650; text-decoration: none; }
+        .list-item { border: 1px solid var(--hm-n300); border-radius: 0; padding: 0.6rem; overflow-wrap: anywhere; }
+        .list-item.stale { border-color: var(--hm-warn-soft); background: var(--hm-warn-soft); }
+        .muted { color: var(--hm-dim); }
+        .empty { color: var(--hm-dim); padding: 1rem; }
+        .status { color: var(--hm-n800); font-size: 0.9rem; padding: 1rem; }
+        a.xlink { color: var(--hm-home); font-weight: 700; text-decoration: none; }
         @media (max-width: 980px) {
             .shell { grid-template-columns: 1fr; }
             .view { height: 60vh; }
@@ -119,18 +101,12 @@
 </head>
 <body>
     <script src="auth.js"></script>
-    <header class="header">
-        <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f3f3f4"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
-            <h1>Electronic Lab Notebook</h1>
-        </div>
-        <p style="margin-left: calc(34px + 0.8rem);">Data Explorer</p>
-    </header>
+    <!--@HEADER Data Explorer@-->
     <nav class="nav">
         <a href="reports.html">Reports</a>
         <a href="experiments.html">Experiment Catalog</a>
         <a href="protocols.html">Protocols</a>
-        <a href="sdgl.html">Data Explorer</a>
+        <a href="sdgl.html" aria-current="page">Data Explorer</a>
         <a href="code.html">Code</a>
         <a href="documents.html">Documents</a>
         <a href="presentations.html">Presentations</a>

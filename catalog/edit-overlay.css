@@ -1,21 +1,7 @@
 /* Edit overlay - injected by Flask for local editing */
 
 /* Fixed bottom toolbar */
-.eln-toolbar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #0f3d3a;
-    color: white;
-    padding: 0.7rem 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    z-index: 9999;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.25);
-    font-family: 'Archivo', system-ui, -apple-system, sans-serif;
-}
+.eln-toolbar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--hm-ground); color: var(--hm-ink); padding: 0.4rem 1.5rem; display: flex; align-items: center; gap: 0.5rem; z-index: 9999; border-top: 2px solid var(--hm-ink); font-family: var(--hm-font); }
 
 /* Right-aligned cluster holding Add / Export / Publish, kept tightly grouped. */
 .eln-toolbar-actions {
@@ -25,83 +11,29 @@
     gap: 0.6rem;
 }
 
-.eln-toolbar-label {
-    font-weight: 600;
-    font-size: 0.85rem;
-    opacity: 0.9;
-    margin-right: 0.5rem;
-    white-space: nowrap;
-}
+.eln-toolbar-label { font: 700 11px/1 var(--hm-font); letter-spacing: .08em; text-transform: uppercase; color: var(--hm-dim); margin-right: 0.5rem; white-space: nowrap; }
 
 /* Base toolbar button = the secondary "Export" style: subtle on the dark bar. */
-.eln-toolbar-btn {
-    padding: 0.45rem 0.95rem;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-    white-space: nowrap;
-    text-decoration: none;
-    display: inline-block;
-    line-height: 1.4;
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
-}
+.eln-toolbar-btn { display: inline-flex; align-items: center; height: 44px; padding: 0 1rem; border: 2px solid var(--hm-ink); border-radius: 0; background: none; color: var(--hm-ink); font: 800 13px/1 var(--hm-font); cursor: pointer; white-space: nowrap; text-decoration: none; }
 
-.eln-toolbar-btn:hover {
-    background: rgba(255, 255, 255, 0.24);
-    transform: translateY(-1px);
-}
+.eln-toolbar-btn:hover { background: var(--hm-n200); }
 
-.eln-toolbar-btn:active {
-    transform: translateY(0);
-}
+.eln-toolbar-btn:active { background: var(--hm-n300); }
 
-.eln-toolbar-btn.add {
-    background: #6b3fa0;
-}
+.eln-toolbar-btn.add { background: var(--hm-home); border-color: var(--hm-home); color: var(--hm-on-home); }
 
-.eln-toolbar-btn.add:hover {
-    background: #5a3389;
-}
+.eln-toolbar-btn.add:hover { background: var(--hm-home-hover); border-color: var(--hm-home-hover); }
 
-.eln-toolbar-btn.publish {
-    background: #0e7c7b;
-    color: white;
-}
+.eln-toolbar-btn.publish { background: var(--hm-home); border-color: var(--hm-home); color: var(--hm-on-home); }
 
-.eln-toolbar-btn.publish:hover {
-    background: #0a6564;
-}
+.eln-toolbar-btn.publish:hover { background: var(--hm-home-hover); border-color: var(--hm-home-hover); }
 
-.eln-toolbar-btn.publish:disabled {
-    background: #3a3940;
-    cursor: not-allowed;
-    transform: none;
-}
+.eln-toolbar-btn.publish:disabled { background: var(--hm-n300); border-color: var(--hm-n300); color: var(--hm-dim); cursor: not-allowed; }
 
 /* Inline edit buttons (per card / row) */
-.eln-edit-btn {
-    padding: 0.28rem 0.7rem;
-    background: #6b3fa0;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    transition: background 0.2s;
-    vertical-align: middle;
-}
+.eln-edit-btn { display: inline-flex; align-items: center; justify-content: center; height: 30px; padding: 0 0.7rem; border: 2px solid var(--hm-home); border-radius: 0; background: var(--hm-home); color: var(--hm-on-home); font: 800 12px/1 var(--hm-font); text-decoration: none; white-space: nowrap; cursor: pointer; }
 
-.eln-edit-btn:hover {
-    background: #5a3389;
-    color: white;
-}
+.eln-edit-btn:hover { background: var(--hm-home-hover); border-color: var(--hm-home-hover); color: var(--hm-on-home); }
 
 /* Per-row action cell in the experiments table: Edit + Copy on one line.
    Slightly tighter padding so both fit the narrow action column. */
@@ -109,9 +41,7 @@
     white-space: nowrap;
 }
 
-.eln-row-actions .eln-edit-btn {
-    padding: 0.28rem 0.55rem;
-}
+.eln-row-actions .eln-edit-btn { height: 28px; padding: 0 0.4rem; font-size: 11px; }
 
 .eln-row-actions .eln-edit-btn + .eln-edit-btn {
     margin-left: 0.3rem;
@@ -119,16 +49,9 @@
 
 /* Secondary row action (Copy): same shape as Edit, quieter fill, so a row
    doesn't read as two equally primary actions. */
-.eln-edit-btn.secondary {
-    background: transparent;
-    color: #6b3fa0;
-    box-shadow: inset 0 0 0 1px #cbb8e6;
-}
+.eln-edit-btn.secondary { background: none; color: var(--hm-ink); border-color: var(--hm-ink); }
 
-.eln-edit-btn.secondary:hover {
-    background: #f1ebf8;
-    color: #4a2a78;
-}
+.eln-edit-btn.secondary:hover { background: var(--hm-n200); color: var(--hm-ink); border-color: var(--hm-ink); }
 
 /* Tight right-side cluster for a card header: version pill + Edit/Export. */
 .eln-card-actions {
@@ -139,20 +62,10 @@
 }
 
 /* Small "latest version" pill shown in a report header (mirrors .latest-badge). */
-.eln-version-pill {
-    background: #eee7f7;
-    color: #5a3389;
-    padding: 0.15rem 0.55rem;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    white-space: nowrap;
-}
+.eln-version-pill { padding: 3px 5px; border: 1.5px solid currentColor; color: var(--hm-home-text); font: 700 11px/1 var(--hm-font); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
 
 /* Add padding at page bottom so toolbar doesn't cover content */
-body.eln-editing {
-    padding-bottom: 60px;
-}
+body.eln-editing { padding-bottom: 64px; }
 
 /* Publish status toast */
 .eln-toast {
@@ -160,7 +73,7 @@ body.eln-editing {
     top: 1rem;
     right: 1rem;
     padding: 1rem 1.5rem;
-    border-radius: 8px;
+    border-radius: 0;
     color: white;
     font-weight: 600;
     font-size: 0.9rem;
@@ -168,7 +81,7 @@ body.eln-editing {
     opacity: 0;
     transform: translateY(-10px);
     transition: opacity 0.3s, transform 0.3s;
-    font-family: 'Archivo', system-ui, -apple-system, sans-serif;
+    font-family: var(--hm-font);
 }
 
 .eln-toast.show {
@@ -176,22 +89,24 @@ body.eln-editing {
     transform: translateY(0);
 }
 
-.eln-toast.success {
-    background: #28a745;
-}
+.eln-toast.success { background: var(--hm-ok); }
 
 .eln-toast.error {
-    background: #dc3545;
+    background: var(--hm-danger);
 }
 
 .eln-toast.info {
-    background: #6b3fa0;
+    background: var(--hm-home);
 }
 
 /* ==================== inline form modal ==================== */
 
 .eln-form-modal {
-    /* Big and centered. The generated pages ship a `* { margin: 0 }` reset that
+    /* Big and centered. The generated pages ship a `* { margin: 0
+    background: var(--hm-raised);
+    color: var(--hm-ink);
+    font-family: var(--hm-font);
+}` reset that
        clobbers the UA's `margin: auto` modal centering, so we re-assert it. */
     position: fixed;
     inset: 0;
@@ -201,18 +116,15 @@ body.eln-editing {
     max-height: 92vh;
     overflow: auto;
     border: none;
-    border-radius: 10px;
+    border-radius: 0;
     padding: 0;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-    font-family: 'Archivo', system-ui, -apple-system, sans-serif;
+    font-family: var(--hm-font);
     color: #333;
 }
 .eln-form-modal::backdrop { background: rgba(0, 0, 0, 0.45); }
 .eln-form-modal-close-row { display: flex; justify-content: flex-end; margin: 0; }
-.eln-form-modal-close {
-    background: none; border: none; font-size: 1.6rem; line-height: 1;
-    padding: 0.5rem 0.9rem; cursor: pointer; color: #667;
-}
+.eln-form-modal-close { background: none; border: none; font-size: 1.6rem; line-height: 1; padding: 0.5rem 0.9rem; cursor: pointer; color: var(--hm-dim); }
 .eln-form-modal-body { padding: 0 1.5rem 1.5rem; }
 .eln-form-modal-body h2 { margin: 0 0 1rem; font-size: 1.3rem; }
 
@@ -225,78 +137,55 @@ body.eln-editing {
 }
 .eln-form-modal-body .form-group { display: flex; flex-direction: column; }
 .eln-form-modal-body .form-group.full-width { grid-column: 1 / -1; }
-.eln-form-modal-body .form-section {
-    margin-bottom: 1.75rem; padding-bottom: 1.75rem; border-bottom: 1px solid #eee;
-}
+.eln-form-modal-body .form-section { margin-bottom: 1.75rem; padding-bottom: 1.75rem; border-bottom: 1px solid var(--hm-divider); }
 .eln-form-modal-body .form-section:last-of-type {
     margin-bottom: 0; padding-bottom: 0; border-bottom: none;
 }
-.eln-form-modal-body .form-section-title {
-    font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;
-    font-weight: 700; color: #8a8fa3; margin-bottom: 1rem;
-}
+.eln-form-modal-body .form-section-title { font: 700 11px/1 var(--hm-font); text-transform: uppercase; letter-spacing: .08em; color: var(--hm-dim); margin-bottom: 1rem; }
 .eln-form-modal-body .form-section .form-grid { margin-bottom: 0; }
 .eln-form-modal-body label {
-    font-weight: 600; margin-bottom: 0.5rem; color: #555; font-size: 0.9rem;
+    font-weight: 600; margin-bottom: 0.5rem; color: var(--hm-dim); font-size: 0.9rem;
 }
 .eln-form-modal-body input,
 .eln-form-modal-body select,
-.eln-form-modal-body textarea {
-    padding: 0.75rem; border: 1px solid #b6b6bc; border-radius: 6px;
-    font-size: 0.95rem; font-family: inherit;
-}
+.eln-form-modal-body textarea { padding: 0.65rem 0.75rem; border: 2px solid var(--hm-divider); border-radius: 0; background: var(--hm-raised); color: var(--hm-ink); font-size: 16px; font-family: inherit; }
 .eln-form-modal-body textarea {
     resize: vertical; min-height: 120px;
-    font-family: 'Monaco', 'Courier New', monospace;
+    font-family: var(--hm-mono);
 }
 .eln-form-modal-body textarea.large { min-height: 300px; }
-.eln-form-modal-body .button {
-    padding: 0.75rem 1.5rem; background: #0e7c7b; color: white; border: none;
-    border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer;
-}
-.eln-form-modal-body .button:hover { background: #5a3389; }
-.eln-form-modal-body .button.secondary { background: #6c757d; }
-.eln-form-modal-body .button.secondary:hover { background: #5a6268; }
+.eln-form-modal-body .button { display: inline-flex; align-items: center; height: 44px; padding: 0 1.25rem; background: var(--hm-home); color: var(--hm-on-home); border: 2px solid var(--hm-home); border-radius: 0; font: 800 13px/1 var(--hm-font); cursor: pointer; }
+.eln-form-modal-body .button:hover { background: var(--hm-home-hover); border-color: var(--hm-home-hover); }
+.eln-form-modal-body .button.secondary { background: none; color: var(--hm-ink); border-color: var(--hm-ink); }
+.eln-form-modal-body .button.secondary:hover { background: var(--hm-n200); border-color: var(--hm-ink); }
 .eln-form-modal-body .button-group { display: flex; gap: 1rem; margin-top: 1.5rem; }
 .eln-form-modal-body .channel-row {
     display: flex; align-items: center; gap: 0.75rem; padding: 0.35rem 0;
 }
-.eln-form-modal-body .channel-row .channel-name { flex: 0 0 90px; font-weight: 600; color: #444; }
+.eln-form-modal-body .channel-row .channel-name { flex: 0 0 90px; font-weight: 600; color: var(--hm-ink); }
 .eln-form-modal-body .channel-row .channel-target,
 .eln-form-modal-body .channel-row .channel-modality { flex: 1 1 auto; margin: 0; }
 .eln-form-modal-body .protocol-checkbox-item {
     display: flex; align-items: center; padding: 0.5rem; margin-bottom: 0.25rem;
-    background: #f8f8f9; border-radius: 4px;
+    background: var(--hm-n100); border-radius: 0;
 }
 .eln-form-modal-body .protocol-checkbox-item input[type="checkbox"] { margin-right: 0.5rem; width: auto; }
 .eln-form-modal-body .protocol-checkbox-item label { margin: 0; cursor: pointer; flex: 1; }
-.eln-form-modal-body .tag-input {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
-    border: 1px solid #b6b6bc; border-radius: 6px; padding: 0.5rem; background: white;
-}
+.eln-form-modal-body .tag-input { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; border: 2px solid var(--hm-divider); border-radius: 0; padding: 0.5rem; background: var(--hm-raised); }
 .eln-form-modal-body .tag-input input { flex: 1; min-width: 8rem; border: none; outline: none; padding: 0.25rem; }
-.eln-form-modal-body .tag-chip {
-    display: inline-flex; align-items: center; gap: 0.35rem; border-radius: 999px;
-    background: #eee7f7; color: #5a3389; font-size: 0.85rem; font-weight: 600; padding: 0.15rem 0.6rem;
-}
-.eln-form-modal-body .tag-chip button {
-    border: none; background: none; color: #5a3389; cursor: pointer;
-    font-size: 1rem; line-height: 1; padding: 0;
-}
+.eln-form-modal-body .tag-chip { display: inline-flex; align-items: center; gap: 0.35rem; border: 1px solid var(--hm-divider); border-radius: 0; background: none; color: var(--hm-ink); font-size: 0.85rem; font-weight: 600; padding: 0.15rem 0.6rem; }
+.eln-form-modal-body .tag-chip button { border: none; background: none; color: var(--hm-dim); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0; }
 .eln-form-modal-body .hidden { display: none; }
 
 /* Report version selector — lives inside the card body, so it only shows once
    the card is expanded (mirrors the protocols' .version-selector). */
 .eln-version {
-    margin: 0 0 1rem; font-size: 0.9rem; color: #403f47;
+    margin: 0 0 1rem; font-size: 0.9rem; color: var(--hm-n800);
     display: flex; gap: 0.5rem; align-items: center;
 }
 .eln-version label { font-weight: 600; }
-.eln-version-select {
-    padding: 0.4rem 0.6rem; border: 1px solid #b6b6bc;
-    border-radius: 6px; font-size: 0.9rem;
-}
+.eln-version-select { padding: 0.4rem 0.6rem; border: 2px solid var(--hm-divider); border-radius: 0; font-size: 0.9rem; }
 .eln-version-pre {
-    white-space: pre-wrap; background: #f5f5f6; padding: 1rem;
-    border-radius: 6px; overflow: auto;
+    white-space: pre-wrap; background: var(--hm-n100); padding: 1rem;
+    border-radius: 0; overflow: auto;
 }

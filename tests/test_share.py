@@ -280,7 +280,7 @@ def test_export_all_writes_static_sdgl_snapshot(data_root, tmp_path):
     page = (dest / "sdgl.html").read_text()
     assert "window.SDGL_STATIC = true" in page      # static mode on
     assert "auth.js" not in page                     # server-only script dropped
-    assert '<a href="sdgl.html">Data Explorer</a>' in page  # own nav repointed
+    assert '<a href="sdgl.html" aria-current="page">Data Explorer</a>' in page  # own nav, marked current
     assert not (dest / "sdgl_data.json").exists()    # data is inline, not fetched
 
     embedded = re.search(r"window\.SDGL_DATA = (\{.*?\});</script>", page, re.S)

@@ -9,6 +9,7 @@ import argparse
 import re
 from pathlib import Path
 
+from eln.generators.chrome import bake
 from eln.generators.nav import render_nav
 
 # Presentation decks open in a separate window. window.open with explicit
@@ -90,46 +91,32 @@ def generate_presentations(root, catalog_out=None):
             </tr>"""
 
     html = f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-home="teal">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presentations</title>
     <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: 'Archivo', system-ui, -apple-system, sans-serif; line-height: 1.6; color: #1c1b22; background: #f3f3f4; }}
-        .header {{ background: #0f3d3a; color: white; padding: 1.25rem 1.5rem; }}
-        .header h1 {{ font-size: 1.55rem; margin-bottom: 0.25rem; }}
-        .header p {{ color: #d2e8e7; }}
-        .nav {{ display: flex; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; gap: 1rem; background: white; padding: 0.8rem 1.5rem; border-bottom: 1px solid #d4d4d8; }}
-        .nav a {{ color: #6b3fa0; text-decoration: none; font-weight: 650; }}
-        .nav a:hover {{ text-decoration: underline; }}
-        .container {{ max-width: 1400px; margin: 0 auto; padding: 1.5rem; }}
+        /*@HOUSE_CSS@*/        .container {{ max-width: 1400px; margin: 0 auto; padding: 1.5rem; }}
         .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }}
-        .stat-card {{ background: white; padding: 1rem 1.25rem; border: 1px solid #d4d4d8; border-radius: 8px; }}
-        .stat-card .number {{ font-size: 1.5rem; font-weight: 700; color: #0e7c7b; }}
-        .stat-card .label {{ color: #5c5b63; margin-top: 0.25rem; font-size: 0.85rem; }}
-        .table-container {{ background: white; border: 1px solid #d4d4d8; border-radius: 8px; overflow-x: auto; }}
+        .stat-card {{ background: var(--hm-raised); padding: 1rem 1.25rem; border: 0; border-top: 2px solid var(--hm-ink); border-radius: 0; }}
+        .stat-card .number {{ font-size: 1.5rem; font-weight: 700; color: var(--hm-home); }}
+        .stat-card .label {{ color: var(--hm-dim); margin-top: 0.25rem; font-size: 0.85rem; }}
+        .table-container {{ background: var(--hm-raised); border: 0; border-top: 2px solid var(--hm-ink); border-radius: 0; overflow-x: auto; }}
         table {{ width: 100%; border-collapse: collapse; font-size: 0.92rem; }}
-        th {{ background: #f8f8f9; color: #403f47; padding: 0.65rem; text-align: left; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid #e8e8ea; }}
-        td {{ padding: 0.65rem; border-bottom: 1px solid #e8e8ea; vertical-align: top; }}
-        tr:hover {{ background: #f8f8f9; }}
-        .presentation-link {{ color: #6b3fa0; text-decoration: none; font-weight: 600; }}
+        th {{ background: var(--hm-raised); color: var(--hm-dim); padding: 0.65rem; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; border-bottom: 1px solid var(--hm-divider); }}
+        td {{ padding: 0.65rem; border-bottom: 1px solid var(--hm-n200); vertical-align: top; }}
+        tr:hover {{ background: var(--hm-n100); }}
+        .presentation-link {{ color: var(--hm-home); text-decoration: none; font-weight: 600; }}
         .presentation-link:hover {{ text-decoration: underline; }}
-        .footer {{ text-align: center; padding: 1.5rem; color: #5c5b63; font-size: 0.85rem; margin-top: 2rem; }}
+        .footer {{ text-align: center; padding: 1.5rem; color: var(--hm-dim); font-size: 0.85rem; margin-top: 2rem; }}
     </style>
 </head>
 <body>
     <script src="auth.js"></script>
-    <div class="header">
-        <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f3f3f4"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
-            <h1>Electronic Lab Notebook</h1>
-        </div>
-        <p style="margin-left: calc(34px + 0.8rem);">Presentations</p>
-    </div>
+    <!--@HEADER Presentations@-->
 
-    {render_nav()}
+    {render_nav(current="presentations.html")}
 
     <div class="container">
         <div class="stats">
@@ -160,6 +147,7 @@ def generate_presentations(root, catalog_out=None):
 {PRESENTATION_WINDOW_SCRIPT}
 </body>
 </html>"""
+    html = bake(html)
 
     catalog_dir.mkdir(parents=True, exist_ok=True)
     output_file = catalog_dir / "presentations.html"

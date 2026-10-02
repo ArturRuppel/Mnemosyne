@@ -31,17 +31,21 @@ NAV_ORDER = [
 ]
 
 
-def render_nav(plugins=None):
+def render_nav(plugins=None, current=None):
     """Return the ``<div class="nav">…</div>`` block (no outer indent on the
     opening tag; inner links indented 8 spaces, closing tag 4) so callers can
     drop it in behind a 4-space template indent.
 
     Links are ordered by :data:`NAV_ORDER`; any not listed there are appended
-    in their natural core-then-plugin order."""
+    in their natural core-then-plugin order. The link whose href is *current*
+    is marked ``aria-current="page"``, which the chrome underlines."""
     if plugins is None:
         plugins = discover_plugins()
     links = [*CORE_NAV, *(p.nav for p in plugins if p.nav)]
     rank = {label: i for i, label in enumerate(NAV_ORDER)}
     links.sort(key=lambda link: rank.get(link.label, len(rank)))
-    rows = "\n".join(f'        <a href="{link.href}">{link.label}</a>' for link in links)
+    mark = ' aria-current="page"'
+    rows = "\n".join(
+        f'        <a href="{link.href}"{mark if link.href == current else ""}>{link.label}</a>'
+        for link in links)
     return f'<div class="nav">\n{rows}\n    </div>'

@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 
 from eln.generators.explorers import explorer_cell, explorer_links
+from eln.generators.chrome import bake
 from eln.generators.nav import render_nav
 from eln.sdgl import allocate_experiment_codes, format_experiment_id
 
@@ -66,54 +67,13 @@ def _format_date_cell(derived_date):
 
 
 HTML_TEMPLATE = """<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-home="teal">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Experiment Catalog</title>
     <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
-        body {{
-            font-family: 'Archivo', system-ui, -apple-system, sans-serif;
-            line-height: 1.6;
-            color: #1c1b22;
-            background: #f3f3f4;
-        }}
-        .header {{
-            background: #0f3d3a;
-            color: white;
-            padding: 1.25rem 1.5rem;
-        }}
-        .header h1 {{
-            font-size: 1.55rem;
-            margin-bottom: 0.25rem;
-        }}
-        .header p {{
-            color: #d2e8e7;
-        }}
-        .nav {{
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            white-space: nowrap;
-            gap: 1rem;
-            background: white;
-            padding: 0.8rem 1.5rem;
-            border-bottom: 1px solid #d4d4d8;
-        }}
-        .nav a {{
-            color: #6b3fa0;
-            font-weight: 650;
-            text-decoration: none;
-        }}
-        .nav a:hover {{
-            text-decoration: underline;
-        }}
-        .container {{
+        /*@HOUSE_CSS@*/        .container {{
             max-width: none;
             margin: 0 auto;
             padding: 1.5rem;
@@ -125,26 +85,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 1.5rem;
         }}
         .stat-card {{
-            background: white;
+            background: var(--hm-raised);
             padding: 1rem 1.25rem;
-            border: 1px solid #d4d4d8;
-            border-radius: 8px;
+            border: 0; border-top: 2px solid var(--hm-ink);
+            border-radius: 0;
         }}
         .stat-card .number {{
             font-size: 1.5rem;
             font-weight: 700;
-            color: #0e7c7b;
+            color: var(--hm-home);
         }}
         .stat-card .label {{
-            color: #5c5b63;
+            color: var(--hm-dim);
             margin-top: 0.25rem;
             font-size: 0.85rem;
         }}
         .filters {{
-            background: white;
+            background: var(--hm-raised);
             padding: 1rem 1.25rem;
-            border: 1px solid #d4d4d8;
-            border-radius: 8px;
+            border: 0; border-top: 2px solid var(--hm-ink);
+            border-radius: 0;
             margin-bottom: 1.5rem;
         }}
         .filter-group {{
@@ -158,14 +118,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .filter-group input {{
             width: 100%;
             padding: 0.5rem 0.65rem;
-            border: 1px solid #b6b6bc;
-            border-radius: 6px;
+            border: 2px solid var(--hm-divider);
+            border-radius: 0;
             font-size: 1rem;
         }}
         .table-container {{
-            background: white;
-            border: 1px solid #d4d4d8;
-            border-radius: 8px;
+            background: var(--hm-raised);
+            border: 0; border-top: 2px solid var(--hm-ink);
+            border-radius: 0;
             overflow-x: auto;
         }}
         table {{
@@ -177,7 +137,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         th[data-column="thumbnail"] {{ width: 6%; }}
         th[data-column="experiment_id"] {{ width: 7%; }}
-        .exp-id {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 650; color: #5a3389; white-space: nowrap; }}
+        .exp-id {{ font-family: var(--hm-mono); font-weight: 700; color: var(--hm-home-hover); white-space: nowrap; }}
         th[data-column="experiment_type"] {{ width: 10%; }}
         th[data-column="explorer"] {{ width: 7%; }}
         th[data-column="date"] {{ width: 6%; }}
@@ -189,21 +149,21 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         th[data-column="tags"] {{ width: 8%; }}
         th[data-column="comments"] {{ width: 11%; }}
         th {{
-            background: #f8f8f9;
-            color: #403f47;
+            background: var(--hm-raised);
+            color: var(--hm-dim);
             padding: 0.65rem;
             text-align: left;
-            font-size: 0.8rem;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 700; letter-spacing: .08em;
             text-transform: uppercase;
-            border-bottom: 1px solid #e8e8ea;
+            border-bottom: 1px solid var(--hm-divider);
             position: sticky;
             top: 0;
             cursor: pointer;
             user-select: none;
         }}
         th:hover {{
-            background: #eaeaec;
+            background: var(--hm-sunk);
         }}
         th::after {{
             content: ' ↕';
@@ -229,44 +189,32 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             user-select: none;
         }}
         .col-resizer:hover {{
-            background: #c4c4ca;
+            background: var(--hm-n400);
         }}
         td {{
             padding: 0.65rem;
-            border-bottom: 1px solid #e8e8ea;
+            border-bottom: 1px solid var(--hm-n200);
             vertical-align: top;
         }}
         tr:hover {{
-            background: #f8f8f9;
+            background: var(--hm-n100);
         }}
         tr.hidden {{
             display: none;
         }}
         .protocol-link {{
-            color: #6b3fa0;
+            color: var(--hm-home);
             text-decoration: none;
             font-weight: 600;
         }}
         .protocol-link:hover {{
             text-decoration: underline;
         }}
-        .explorer-link {{
-            display: inline-block;
-            padding: 0.2rem 0.6rem;
-            border-radius: 6px;
-            background: #6b3fa0;
-            color: #fff;
-            font-weight: 650;
-            font-size: 0.82rem;
-            text-decoration: none;
-            white-space: nowrap;
-        }}
-        .explorer-link:hover {{
-            background: #4a2a78;
-        }}
+        .explorer-link {{ display: inline-flex; align-items: center; justify-content: center; height: 30px; padding: 0 0.7rem; border: 2px solid var(--hm-home); border-radius: 0; background: var(--hm-home); color: var(--hm-on-home); font: 800 12px/1 var(--hm-font); text-decoration: none; white-space: nowrap; cursor: pointer; }}
+        .explorer-link:hover {{ background: var(--hm-home-hover); border-color: var(--hm-home-hover); }}
         .comments-cell {{
             font-size: 0.9rem;
-            color: #555;
+            color: var(--hm-dim);
         }}
         .comments-inner {{
             overflow: hidden;
@@ -289,10 +237,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .tag-chip {{
             display: inline-block;
             max-width: 100%;
-            border-radius: 12px;
-            background: #eee7f7;
+            border-radius: 0;
+            background: none; border: 1px solid var(--hm-divider);
             line-height: 1.35;
-            color: #5a3389;
+            color: var(--hm-ink);
             font-size: 0.75rem;
             font-weight: 600;
             padding: 0.1rem 0.5rem;
@@ -304,24 +252,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .thumb-img {{
             max-width: 100%;
             max-height: 56px;
-            border-radius: 4px;
-            border: 1px solid #d4d4d8;
+            border-radius: 0;
+            border: 1px solid var(--hm-n300);
             object-fit: cover;
             display: block;
         }}
         .date-missing {{
-            color: #9a9aa1;
+            color: var(--hm-faint);
         }}
         .no-results {{
             text-align: center;
             padding: 3rem;
-            color: #5c5b63;
+            color: var(--hm-dim);
             font-size: 1.1rem;
         }}
         .footer {{
             text-align: center;
             padding: 1.5rem;
-            color: #5c5b63;
+            color: var(--hm-dim);
             font-size: 0.85rem;
             margin-top: 2rem;
         }}
@@ -329,13 +277,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
     <script src="auth.js"></script>
-    <div class="header">
-        <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#f3f3f4"></path><g stroke="#b79ce6" stroke-linecap="round"><ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse><ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse><ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse></g></svg>
-            <h1>Electronic Lab Notebook</h1>
-        </div>
-        <p style="margin-left: calc(34px + 0.8rem);">Experiment Catalog</p>
-    </div>
+    <!--@HEADER Experiment Catalog@-->
 
     {nav}
 
@@ -504,6 +446,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </body>
 </html>
 """
+HTML_TEMPLATE = bake(HTML_TEMPLATE, template=True)
 
 
 def generate_catalog(root, catalog_out=None, plugins=None):
@@ -727,7 +670,7 @@ def generate_catalog(root, catalog_out=None, plugins=None):
 
     # Generate final HTML
     html = HTML_TEMPLATE.format(
-        nav=render_nav(plugins),
+        nav=render_nav(plugins, current="experiments.html"),
         total_experiments=total_experiments,
         date_range=date_range,
         experiments_html='\n'.join(experiments_html),

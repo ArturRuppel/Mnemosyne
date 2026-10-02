@@ -41,7 +41,7 @@ labbook = "eln.cli:main"
 include = ["eln*"]
 
 [tool.setuptools.package-data]
-eln = ["certs/*.pem"]
+eln = ["certs/*.pem", "static/harmonia/*.css"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

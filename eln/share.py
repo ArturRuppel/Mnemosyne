@@ -14,6 +14,7 @@ import re
 import shutil
 from pathlib import Path
 
+from eln.generators.chrome import bake
 from eln.generators import generate_all
 from eln.generators.protocols import generate_protocol_catalog
 from eln.generators.reports import generate_reports, report_page_name
@@ -278,7 +279,7 @@ def _staticize_sdgl(html, snapshot):
     The snapshot is embedded inline (not written as a sibling JSON the page fetches)
     so the bundle renders when opened straight from disk — browsers block ``fetch()``
     of sibling files under the ``file://`` protocol, which would leave the graph blank."""
-    html = _AUTH_JS.sub("", html)
+    html = _AUTH_JS.sub("", bake(html))
     html = html.replace('<a href="/">Data Explorer</a>', '<a href="sdgl.html">Data Explorer</a>')
     html = _add_favicon(html)
     # Escape ``</`` so the JSON can't close the <script> early. Set the flag + data
