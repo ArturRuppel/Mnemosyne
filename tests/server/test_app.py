@@ -515,7 +515,7 @@ def test_served_page_is_installable(client):
     assert client.post("/api/regenerate").status_code == 200
     html = client.get("/").get_data(as_text=True)
     assert '<link rel="manifest" href="/manifest.webmanifest">' in html
-    assert "navigator.serviceWorker.register('/sw.js')" in html
+    assert "navigator.serviceWorker.register('/sw.js'" in html
     assert 'name="theme-color"' in html
 
 
@@ -524,8 +524,74 @@ def test_sdgl_page_is_installable(client):
     # Reports) — confirm it is independently installable at its own route.
     html = client.get("/sdgl.html").get_data(as_text=True)
     assert '<link rel="manifest" href="/manifest.webmanifest">' in html
-    assert "navigator.serviceWorker.register('/sw.js')" in html
+    assert "navigator.serviceWorker.register('/sw.js'" in html
     assert 'name="theme-color"' in html
+
+
+# --- offline cache (service worker) -----------------------------------------
+
+def test_service_worker_is_served_no_cache(client):
+    # An installed home-screen app must pick up a new worker on its next launch.
+    assert client.get("/sw.js").headers["Cache-Control"] == "no-cache"
+
+
+def test_pages_are_revalidated_but_cacheable(client):
+    # no-store would forbid the offline copy; no-cache keeps every load live.
+    r = client.get("/sdgl.html")
+    assert r.headers["Cache-Control"] == "no-cache, must-revalidate"
+    assert 'name="mnemosyne-offline"' in r.get_data(as_text=True)
+
+
+def test_api_is_no_store_except_cacheable_reads(client):
+    for path in ("/api/experiments", "/api/tags", "/api/protocols",
+                 "/api/sdgl/backup/status", "/api/reports"):
+        assert client.get(path).headers["Cache-Control"] == "no-store", path
+    assert client.post("/api/regenerate").headers["Cache-Control"] == "no-store"
+    tree = client.get("/api/sdgl/tree")
+    assert tree.status_code == 200
+    assert "no-store" not in tree.headers.get("Cache-Control", "")
+
+
+def test_static_mount_html_gets_offline_snippet(app_root):
+    root, app = app_root
+    client = app.test_client()
+    bundle = root / "explorers" / "DEMO-01"
+    bundle.mkdir(parents=True)
+    (bundle / "index.html").write_text(
+        "<!doctype html><html><head><title>x</title></head><body>v</body></html>")
+    (bundle / "app.js").write_text("// unchanged")
+
+    r = client.get("/explorers/DEMO-01/index.html")
+    html = r.get_data(as_text=True)
+    assert r.status_code == 200
+    assert html.startswith("<!doctype html>")
+    assert html.index("serviceWorker.register('/sw.js'") < html.index("</head>")
+    # Only the worker + badge, not the app's manifest and icons.
+    assert 'rel="manifest"' not in html
+    assert client.get("/explorers/DEMO-01/app.js").data == b"// unchanged"
+    assert client.get("/explorers/DEMO-01/missing.html").status_code == 404
+    assert client.get("/explorers/..%2Fexperiments.db").status_code == 404
+
+
+def test_report_html_embed_gets_offline_snippet(app_root):
+    root, app = app_root
+    (root / "reports" / "DEMO").mkdir()
+    (root / "reports" / "DEMO" / "embed.html").write_text("<p>no head</p>")
+    html = app.test_client().get("/reports/DEMO/embed.html").get_data(as_text=True)
+    assert html.startswith("<p>no head</p>")
+    assert "serviceWorker.register('/sw.js'" in html
+
+
+def test_report_media_supports_range_requests(app_root):
+    # The service worker relies on 206 + a Content-Range total to decide whether
+    # to fetch a whole video for the offline cache.
+    root, app = app_root
+    (root / "reports" / "DEMO").mkdir()
+    (root / "reports" / "DEMO" / "clip.mp4").write_bytes(bytes(range(256)) * 4)
+    r = app.test_client().get("/reports/DEMO/clip.mp4", headers={"Range": "bytes=0-1"})
+    assert r.status_code == 206
+    assert r.headers["Content-Range"] == "bytes 0-1/1024"
+    assert r.headers.get("ETag")
 
 
 # --- brand favicon / logo ---------------------------------------------------

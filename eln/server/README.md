@@ -25,11 +25,14 @@ The server is **local-only and unauthenticated by design**.
 - `auth.js` is served as a **no-op** locally; the real Pages password gate is a
   *deployment* concern (see `catalog/auth.js.example`), so no password hash is
   committed to the public code repo.
-- **PWA install**: a web manifest (`/manifest.webmanifest`), root-scoped service
-  worker (`/sw.js`, no-op passthrough — installability only, never caches), and
-  icons (`/icon-*.png`) are served, and the manifest link + SW registration are
-  injected into every page's `<head>`. This makes the local app installable as a
-  standalone desktop app. `labbook admin` also launches a Chromium-family browser
+- **PWA install + offline cache**: a web manifest (`/manifest.webmanifest`),
+  root-scoped service worker (`/sw.js`, served `no-cache`; a read-only offline
+  cache, see `catalog/README.md`), and icons (`/icon-*.png`) are served, and the
+  manifest link + SW registration are injected into every page's `<head>`; HTML
+  under the data mounts (`/reports/`, `/explorers/`, …) gets the registration
+  and offline badge only. Pages are served `no-cache` (live, but storable by the
+  worker); every `/api/` answer except `/api/sdgl/tree` is `no-store`. This makes
+  the app installable as a standalone desktop or home-screen app. `labbook admin` also launches a Chromium-family browser
   with `--app=<url>` so it opens in its own window rather than a tab (falling
   back to a normal tab when no such browser is present).
 

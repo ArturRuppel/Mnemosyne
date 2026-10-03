@@ -149,6 +149,26 @@ labbook admin          # opens the admin/authoring UI in your browser
 labbook admin --scan   # ...and run an SDGL scan on startup
 ```
 
+### On a phone or tablet: HTTPS and the offline cache
+
+The server binds loopback by default and is unauthenticated, so publish it to
+your devices through an HTTPS reverse proxy rather than binding a public
+address. With Tailscale:
+
+```bash
+labbook admin --host 127.0.0.1 --port 5001 --no-browser
+tailscale serve --bg --https=5001 http://127.0.0.1:5001
+# → https://<machine>.<tailnet>.ts.net:5001/  (add it to the home screen)
+```
+
+HTTPS matters beyond transport: browsers only run service workers in a secure
+context, and the service worker (`catalog/sw.js`) keeps a read-only offline
+cache. Every page, figure, explorer and video you open is stored as it passes
+through, the server always answering first; when the server is down (or silent
+for 4 s), cached copies are shown with an "offline · cached copy from …" badge.
+Pages never opened while online, searches and all editing stay online-only.
+Details in [catalog/README.md](catalog/README.md).
+
 ## Commands
 
 Everything is driven by the `labbook` CLI.

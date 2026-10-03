@@ -26,6 +26,7 @@ from pathlib import Path
 import nbformat
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_cors import CORS
+from werkzeug.security import safe_join
 
 from eln.channels import build_alias_map, canonical_channel
 from eln.generators import generate_all
@@ -68,6 +69,48 @@ OVERLAY_SNIPPET = '''
 <script src="/edit-overlay.js"></script>
 '''
 
+# Injected into the <head> of every served HTML page, the generated pages and
+# the static ones under the data mounts (explorer bundles, report embeds) alike.
+# It registers the offline-cache service worker (catalog/sw.js) and shows a badge
+# when the page, or something on it, came from that cache because the server did
+# not answer: sw.js marks such HTML with <meta name="mnemosyne-offline"> and
+# posts a message for subresources. Without service-worker support (or over
+# plain http, where browsers refuse to register one) it does nothing.
+OFFLINE_SNIPPET = '''
+<script>
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(function () {});
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
+  });
+  if (window.top !== window) return;
+  var shown = false;
+  function badge(cachedAt) {
+    if (shown || !document.body) return;
+    shown = true;
+    var el = document.createElement('div');
+    el.className = 'eln-offline-badge';
+    el.title = 'The server did not answer. Tap to try again.';
+    el.textContent = 'offline \\u00b7 cached copy' + (cachedAt ? ' from ' + new Date(cachedAt)
+      .toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '');
+    el.style.cssText = 'position:fixed;z-index:10000;top:max(6px,env(safe-area-inset-top));left:50%;'
+      + 'transform:translateX(-50%);padding:2px 10px;font:12px/1.6 system-ui,sans-serif;'
+      + 'color:#fff;background:rgba(29,29,31,.78);cursor:pointer;white-space:nowrap';
+    el.onclick = function () { location.reload(); };
+    document.body.appendChild(el);
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    var meta = document.querySelector('meta[name="mnemosyne-offline"]');
+    if (meta) badge(Number(meta.content));
+  });
+  navigator.serviceWorker.addEventListener('message', function (event) {
+    if (event.data && event.data.type === 'mnemosyne-offline') badge(event.data.cachedAt);
+  });
+})();
+</script>
+'''
+
 # Injected into <head> so the local server is installable as a standalone PWA
 # (own window, desktop/launcher icon) rather than living in a browser tab.
 PWA_HEAD_SNIPPET = '''
@@ -78,19 +121,30 @@ PWA_HEAD_SNIPPET = '''
 <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <link rel="stylesheet" href="/archivo.css">
 <meta name="theme-color" content="#f3f3f4">
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/sw.js').catch(function () {});
-  });
-}
-</script>
-'''
+''' + OFFLINE_SNIPPET
+
+# API reads the offline cache may keep (they render as page content); every other
+# /api/ answer is marked no-store, which sw.js also refuses to cache.
+CACHEABLE_API_PATHS = {"/api/sdgl/tree"}
+
+_HEAD_CLOSE_RE = re.compile(rb"</head\s*>", re.IGNORECASE)
+_BODY_CLOSE_RE = re.compile(rb"</body\s*>", re.IGNORECASE)
 
 # Each report's own page, written next to reports.html by the reports generator.
 _REPORT_PAGE_RE = re.compile(r"report-[^/]+\.html")
 
 _AUTH_SCRIPT_RE = re.compile(r'<script\s+src=["\']auth\.js["\']\s*>\s*</script>')
+
+
+def _inject_offline_snippet(html):
+    """Return the HTML bytes *html* with :data:`OFFLINE_SNIPPET` before the first
+    ``</head>`` (else ``</body>``, else at the end; never ahead of a doctype)."""
+    snippet = OFFLINE_SNIPPET.encode("utf-8")
+    for pattern in (_HEAD_CLOSE_RE, _BODY_CLOSE_RE):
+        m = pattern.search(html)
+        if m:
+            return html[:m.start()] + snippet + html[m.start():]
+    return html + snippet
 
 
 def _read_notebook_markdown_cells(path):
@@ -206,11 +260,33 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
         # /shell.html directly we still skip injecting a stray floating copy.
         if filename != "shell.html":
             html = html.replace("</body>", OVERLAY_SNIPPET + "</body>")
-        # no-store so the installed PWA always re-fetches the page rather than
+        # no-cache so the installed PWA always re-fetches the page rather than
         # reusing a stale copy — generated pages carry inline scripts that change
-        # on regenerate, and a PWA window won't hard-reload on its own.
+        # on regenerate, and a PWA window won't hard-reload on its own. Not
+        # no-store: the service worker keeps a copy for when the server is down.
         resp = Response(html, mimetype="text/html")
-        resp.headers["Cache-Control"] = "no-store, must-revalidate"
+        resp.headers["Cache-Control"] = "no-cache, must-revalidate"
+        return resp
+
+    def send_data_file(directory, filepath, **kwargs):
+        """Serve a file from a data-root directory. HTML (explorer bundles, report
+        embeds, slide decks) gets the offline snippet so a cached copy can say so;
+        everything else, media included, goes out as-is with Range support."""
+        if not filepath.lower().endswith((".html", ".htm")):
+            return send_from_directory(str(directory), filepath, **kwargs)
+        path = safe_join(str(directory), filepath)
+        if path is None or not Path(path).is_file():
+            return "Not found", 404
+        resp = Response(_inject_offline_snippet(Path(path).read_bytes()), mimetype="text/html")
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+    @app.after_request
+    def mark_api_uncacheable(resp):
+        # Editor reads must never be answered stale, nor scan / backup / verify
+        # status: keep /api/ out of every cache, the service worker's included.
+        if request.path.startswith("/api/") and request.path not in CACHEABLE_API_PATHS:
+            resp.headers["Cache-Control"] = "no-store"
         return resp
 
     # ==================== HTML SERVING WITH OVERLAY ====================
@@ -254,10 +330,13 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
 
     @app.route("/sw.js")
     def serve_service_worker():
-        # Root-scoped so it can control the whole app ("/").
-        return send_from_directory(
+        # Root-scoped so it can control the whole app ("/"). no-cache so an
+        # update reaches an installed home-screen app on its next launch.
+        resp = send_from_directory(
             str(assets), "sw.js", mimetype="application/javascript",
         )
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
 
     @app.route("/icon-<variant>.png")
     def serve_icon(variant):
@@ -289,7 +368,7 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
 
     @app.route("/reports/<path:filepath>")
     def serve_report_asset(filepath):
-        return send_from_directory(str(reports_path), filepath, conditional=True)
+        return send_data_file(reports_path, filepath, conditional=True)
 
     @app.route("/source/<path:filepath>")
     def serve_linked_source(filepath):
@@ -317,7 +396,7 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
     # source so the loop variable isn't captured late.
     def _make_static_handler(source_dir):
         def handler(filepath):
-            return send_from_directory(str(source_dir), filepath)
+            return send_data_file(source_dir, filepath)
         return handler
 
     for _plugin in plugins:
