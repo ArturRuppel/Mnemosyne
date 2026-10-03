@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
 
-  <g transform="translate(4 4.8) scale(0.56)" stroke="#0e7c7b" stroke-linecap="round">
-    <path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#0e7c7b" stroke="none"></path>
+  <g transform="translate(4 4.8) scale(0.56)" stroke="#3fb3b1" stroke-linecap="round">
+    <path d="M50 10 C 50 10, 40 24, 40 31 A 10 10 0 0 0 60 31 C 60 24, 50 10, 50 10 Z" fill="#3fb3b1" stroke="none"></path>
     <ellipse cx="50" cy="70" rx="12" ry="4" stroke-width="4.5"></ellipse>
     <ellipse cx="50" cy="70" rx="27" ry="9" stroke-width="4" stroke-opacity="0.75"></ellipse>
     <ellipse cx="50" cy="70" rx="42" ry="15" stroke-width="3.5" stroke-opacity="0.45"></ellipse>

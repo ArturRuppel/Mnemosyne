@@ -75,7 +75,7 @@ PWA_HEAD_SNIPPET = '''
 <link rel="icon" type="image/svg+xml" href="/eln-logo.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <link rel="stylesheet" href="/archivo.css">
 <meta name="theme-color" content="#f3f3f4">
 <script>

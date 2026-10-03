@@ -548,7 +548,7 @@ def test_served_page_links_brand_favicon(client):
     assert client.post("/api/regenerate").status_code == 200
     html = client.get("/").get_data(as_text=True)
     assert '<link rel="icon" type="image/svg+xml" href="/eln-logo.svg">' in html
-    assert '<link rel="apple-touch-icon" href="/apple-touch-icon.png">' in html
+    assert '<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">' in html
 
 
 def test_sdgl_page_carries_inline_header_logo(client):
