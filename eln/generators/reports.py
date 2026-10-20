@@ -1661,15 +1661,18 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
             summary = extract_summary(content)
             summary_html = f'<p class="tile-summary">{_escape(summary)}</p>' if summary else ""
             href = report_page_name(slug)
-            tiles.append(f"""
+            tiles.append((report_date[:10], f"""
                 <article class="report-tile" id="tile-{slug}" data-report-src="{rel_src}">
                     <h2 class="tile-title"><a href="{href}">{title}</a></h2>
                     <div class="tile-date">{report_date}</div>
                     <a class="tile-thumb" href="{href}" tabindex="-1" aria-hidden="true">{thumb_html}</a>
                     {summary_html}
-                </article>""")
+                </article>"""))
 
-        reports_html = '<div class="report-tiles">' + ''.join(tiles) + '\n            </div>'
+        # Tiles run newest first by the date they show (a range's start date),
+        # not by file mtime: editing an old report must not move it to the top.
+        tiles.sort(key=lambda t: t[0], reverse=True)
+        reports_html = '<div class="report-tiles">' + ''.join(h for _, h in tiles) + '\n            </div>'
 
         eln_conn.close()
         if sdgl_conn is not None:

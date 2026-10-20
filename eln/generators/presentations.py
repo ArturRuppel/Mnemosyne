@@ -50,11 +50,13 @@ def parse_presentation_dir(dirname):
 
 
 def count_slides(pres_dir):
-    """Count PNG files in the slides/ subdirectory."""
+    """Count PNG files in the slides/ subdirectory, or the slides of a Calliope
+    (svgdeck) export, which embeds them as JSON in index.html."""
     slides_dir = pres_dir / "slides"
     if slides_dir.exists():
         return len(list(slides_dir.glob("*.png")))
-    return 0
+    index = (pres_dir / "index.html").read_text(errors="ignore")
+    return len(re.findall(r'\{"id": "[^"]*", "svg": ', index))
 
 
 def generate_presentations(root, catalog_out=None):
