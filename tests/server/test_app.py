@@ -1,5 +1,6 @@
 """End-to-end tests for the Flask app against a tiny data root."""
 
+import re
 import sqlite3
 import subprocess
 
@@ -517,6 +518,16 @@ def test_served_page_is_installable(client):
     assert '<link rel="manifest" href="/manifest.webmanifest">' in html
     assert "navigator.serviceWorker.register('/sw.js'" in html
     assert 'name="theme-color"' in html
+
+
+def test_served_pages_carry_the_ipados_status_band(client):
+    # iPadOS only skips its top-edge blur when the band is in the HTML from the first frame.
+    assert client.post("/api/regenerate").status_code == 200
+    for path in ("/", "/sdgl.html"):
+        html = client.get(path).get_data(as_text=True)
+        body = re.search(r"<body\b[^>]*>", html)
+        assert html[body.end():].startswith('<div class="hm-status-band" aria-hidden="true"></div>')
+        assert ".hm-status-band { display: block;" in html
 
 
 def test_sdgl_page_is_installable(client):

@@ -123,6 +123,15 @@ PWA_HEAD_SNIPPET = '''
 <meta name="theme-color" content="#f3f3f4">
 ''' + OFFLINE_SNIPPET
 
+# iPadOS 26 blurs the top of a home-screen app unless a fixed band sits there from the first
+# frame; see .hm-status-band in the family sheet. Generated pages inline the sheet as it was when
+# they were baked, so the rule is taken from the vendored copy and sent along with the band.
+_FAMILY_SHEET = Path(__file__).resolve().parents[1] / "static" / "harmonia" / "harmonia.css"
+_STATUS_BAND_CSS = re.search(r"\.hm-status-band \{.*", _FAMILY_SHEET.read_text(encoding="utf-8"), re.S).group(0)
+STATUS_BAND_HEAD = "<style>" + _STATUS_BAND_CSS + "</style>\n"
+STATUS_BAND_DIV = '<div class="hm-status-band" aria-hidden="true"></div>'
+_BODY_OPEN_RE = re.compile(r"<body\b[^>]*>", re.IGNORECASE)
+
 # API reads the offline cache may keep (they render as page content); every other
 # /api/ answer is marked no-store, which sw.js also refuses to cache.
 CACHEABLE_API_PATHS = {"/api/sdgl/tree"}
@@ -253,7 +262,8 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
         # Strip auth.js (no password prompt locally), make the page installable as
         # a PWA (head), and inject the edit overlay (body).
         html = _AUTH_SCRIPT_RE.sub("", html)
-        html = html.replace("</head>", PWA_HEAD_SNIPPET + "</head>", 1)
+        html = html.replace("</head>", PWA_HEAD_SNIPPET + STATUS_BAND_HEAD + "</head>", 1)
+        html = _BODY_OPEN_RE.sub(lambda m: m.group(0) + STATUS_BAND_DIV, html, count=1)
         # The tab shell (deprecated, no longer served at / — retained only as
         # scaffold) is chrome, not a content page: it has no Export/Add forms of
         # its own and the overlay toolbar is fixed-position, so if someone opens
