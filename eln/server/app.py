@@ -263,7 +263,11 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
         # a PWA (head), and inject the edit overlay (body).
         html = _AUTH_SCRIPT_RE.sub("", html)
         html = html.replace("</head>", PWA_HEAD_SNIPPET + STATUS_BAND_HEAD + "</head>", 1)
-        html = _BODY_OPEN_RE.sub(lambda m: m.group(0) + STATUS_BAND_DIV, html, count=1)
+        # Search for <body> only after </head>: the inlined family sheet's comment mentions
+        # "<body>" too, and matching that put the band inside a CSS comment.
+        head_end = html.find("</head>") + len("</head>")
+        html = html[:head_end] + _BODY_OPEN_RE.sub(
+            lambda m: m.group(0) + STATUS_BAND_DIV, html[head_end:], count=1)
         # The tab shell (deprecated, no longer served at / — retained only as
         # scaffold) is chrome, not a content page: it has no Export/Add forms of
         # its own and the overlay toolbar is fixed-position, so if someone opens

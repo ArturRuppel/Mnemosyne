@@ -525,8 +525,9 @@ def test_served_pages_carry_the_ipados_status_band(client):
     assert client.post("/api/regenerate").status_code == 200
     for path in ("/", "/sdgl.html"):
         html = client.get(path).get_data(as_text=True)
-        body = re.search(r"<body\b[^>]*>", html)
-        assert html[body.end():].startswith('<div class="hm-status-band" aria-hidden="true"></div>')
+        # the real <body>, after </head> (the inlined sheet's comment mentions "<body>" too)
+        body = re.compile(r"<body\b[^>]*>").search(html, html.index("</head>"))
+        assert html[body.end():].lstrip().startswith('<div class="hm-status-band" aria-hidden="true"></div>')
         assert ".hm-status-band { display: block;" in html
 
 
