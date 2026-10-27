@@ -121,6 +121,8 @@ PWA_HEAD_SNIPPET = '''
 <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <link rel="stylesheet" href="/archivo.css">
 <meta name="theme-color" content="#f3f3f4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 ''' + OFFLINE_SNIPPET
 
 # iPadOS 26 blurs the top of a home-screen app unless a fixed band sits there from the first
