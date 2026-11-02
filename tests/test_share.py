@@ -465,3 +465,50 @@ def test_presentation_row_has_data_dir(data_root, tmp_path):
     generate_presentations(data_root, catalog_out=out)
     html = (out / "presentations.html").read_text()
     assert 'data-pres-dir="2025-05-01_Lab_meeting"' in html
+
+
+def _fake_iris(tmp_path):
+    bundle = tmp_path / "dist-web"
+    (bundle / "pyodide").mkdir(parents=True)
+    (bundle / "index.html").write_text("<!doctype html><title>Iris</title>")
+    (bundle / "pyodide" / "manifest.js").write_text("__irisManifest({});")
+    return bundle
+
+
+def test_export_all_ships_iris_and_links_it(data_root, tmp_path):
+    from eln.share import export_all
+
+    out = tmp_path / "bundle"
+    export_all(data_root, out, iris_web=_fake_iris(tmp_path))
+
+    assert (out / "iris" / "index.html").is_file()
+    assert (out / "iris" / "pyodide" / "manifest.js").is_file()
+    assert '<a href="iris/index.html">Iris</a>' in (out / "reports.html").read_text()
+
+
+def test_export_all_without_iris_has_no_link(data_root, tmp_path):
+    from eln.share import export_all
+
+    out = tmp_path / "bundle"
+    export_all(data_root, out)
+
+    assert not (out / "iris").exists()
+    assert "iris/index.html" not in (out / "reports.html").read_text()
+
+
+def test_export_all_replaces_an_older_iris(data_root, tmp_path):
+    from eln.share import export_all
+
+    out = tmp_path / "bundle"
+    (out / "iris" / "assets").mkdir(parents=True)
+    (out / "iris" / "assets" / "index-old.js").write_text("stale")
+    export_all(data_root, out, iris_web=_fake_iris(tmp_path))
+
+    assert not (out / "iris" / "assets" / "index-old.js").exists()
+
+
+def test_export_all_refuses_a_bad_iris_path(data_root, tmp_path):
+    from eln.share import export_all
+
+    with pytest.raises(ValueError, match="iris_web"):
+        export_all(data_root, tmp_path / "bundle", iris_web=tmp_path / "nowhere")

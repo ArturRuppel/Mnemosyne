@@ -251,7 +251,7 @@ def cmd_export(args):
     config = _load(args)
     _ensure_db(config)
     if args.all:
-        result = export_all(config.data_root, args.dest)
+        result = export_all(config.data_root, args.dest, iris_web=config.iris_web)
     elif args.report:
         result = export_item(config.data_root, args.dest, "report", args.report)
     elif args.presentation:

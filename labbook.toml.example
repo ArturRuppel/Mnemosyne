@@ -4,6 +4,10 @@
 # Absolute path to the data repo (holds experiments.sql, reports/, ...).
 data_root = "/abs/path/to/data-repo"
 
+# Optional: a built Iris web site (npm run build:web) that `labbook export --all`
+# ships under iris/.
+# iris_web = "/path/to/Iris/dist-web"
+
 [scanner]
 run_on_startup = false
 daily_scan = false

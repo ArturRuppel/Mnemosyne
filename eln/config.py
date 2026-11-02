@@ -39,6 +39,7 @@ class Config:
     scan_roots: list = field(default_factory=list)  # [{"name": str, "path": Path}]
     channel_aliases: list = field(default_factory=list)  # [[canonical, variant, ...]]
     timestamp: dict = field(default_factory=dict)  # [timestamp] table (RFC 3161)
+    iris_web: Path | None = None  # a built Iris web site for `labbook export --all`
 
 
 def find_config_path() -> Path:
@@ -135,4 +136,5 @@ def load_config(config_path=None, *, root_override=None) -> Config:
         scan_roots=scan_roots,
         channel_aliases=channel_aliases,
         timestamp=data.get("timestamp", {}),
+        iris_web=Path(data["iris_web"]).expanduser() if data.get("iris_web") else None,
     )

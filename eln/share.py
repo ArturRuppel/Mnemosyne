@@ -46,6 +46,7 @@ _EXPLORER_BUNDLE = re.compile(r"^(explorers/[^/]+)/")
 # The server-only ``auth.js`` script a generated page carries (stripped on export).
 _AUTH_JS = re.compile(r'[ \t]*<script src="auth\.js"></script>\n?')
 _NAV_BLOCK = re.compile(r'[ \t]*<div class="nav">.*?</div>\s*?\n?', re.DOTALL)
+_NAV_END = re.compile(r'(<div class="nav">.*?)(\s*</div>)', re.DOTALL)
 
 # Brand assets (favicon + tab logo). Copied into every bundle so the tab icon
 # resolves offline; sourced from the code repo's catalog/ (same place the live
@@ -99,6 +100,21 @@ def _staticize(html):
     html = _AUTH_JS.sub("", html)
     html = html.replace('<a href="/">Data Explorer</a>', '<a href="sdgl.html">Data Explorer</a>')
     return _add_favicon(html)
+
+
+def _add_iris_link(html):
+    """Append the Iris link to a page's nav block, for a bundle that ships Iris."""
+    return _NAV_END.sub(lambda m: f'{m.group(1)}\n        <a href="iris/index.html">Iris</a>{m.group(2)}',
+                        html, count=1)
+
+
+def _copy_iris(iris_web, dest):
+    """Copy the static Iris build into ``dest/iris``, replacing any older build so
+    that its renamed assets do not pile up."""
+    out = Path(dest) / "iris"
+    if out.exists():
+        shutil.rmtree(out)
+    _copy_tree(iris_web, out)
 
 
 def _strip_nav(html):
@@ -220,11 +236,15 @@ def _assert_dest_outside_root(dest, root):
     return dest
 
 
-def export_all(root, dest):
+def export_all(root, dest, iris_web=None):
     """Write the full static catalog bundle to ``dest``. Returns a result dict
-    ``{files, bytes, missing}``."""
+    ``{files, bytes, missing}``. ``iris_web``, when given, is a built Iris web site
+    (``npm run build:web`` in the Iris repo) to ship under ``iris/`` and link from
+    the nav. It opens over ``file://`` like the rest of the bundle."""
     root = Path(root)
     dest = _assert_dest_outside_root(dest, root)
+    if iris_web is not None and not (Path(iris_web) / "index.html").is_file():
+        raise ValueError(f"iris_web has no index.html: {iris_web}")
     dest.mkdir(parents=True, exist_ok=True)
 
     # 1. Render every catalog page straight into the bundle (flat at root).
@@ -240,6 +260,8 @@ def export_all(root, dest):
         rel = Path(path).name
         generated.add(rel)
         text = _staticize(Path(path).read_text())
+        if iris_web is not None:
+            text = _add_iris_link(text)
         Path(path).write_text(text)
         start_pages.append(("", text))
 
@@ -250,6 +272,11 @@ def export_all(root, dest):
     _write_sdgl_snapshot(root, dest)
     (dest / "index.html").write_text(_REDIRECT.format(target="reports.html"))
     generated.update({"sdgl.html", "index.html"})
+    if iris_web is not None:
+        sdgl_page = dest / "sdgl.html"
+        sdgl_page.write_text(_add_iris_link(sdgl_page.read_text()))
+        # copied before the walk, so the nav link is never flagged missing
+        _copy_iris(iris_web, dest)
 
     # 3b. Drop the brand favicon/logo set in so the injected <link>s resolve
     #     (copied before the walk, so they're never flagged missing).
