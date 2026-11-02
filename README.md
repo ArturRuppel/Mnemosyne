@@ -167,6 +167,10 @@ Everything is driven by the `labbook` CLI.
 `labbook export` produces a relative-linked bundle that opens over `file://`
 with no server, suitable for a shared drive or static hosting.
 
+To ship [Iris](https://github.com/ArturRuppel/Iris) with `--all`, build it with
+`npm run build:web` and set `iris_web` in `labbook.toml` to the resulting `dist-web`
+folder. The export copies it to `iris/`, about 96 MB, and adds an Iris link to the nav.
+
 ## How the project is organized
 
 ```
