@@ -512,3 +512,77 @@ def test_export_all_refuses_a_bad_iris_path(data_root, tmp_path):
 
     with pytest.raises(ValueError, match="iris_web"):
         export_all(data_root, tmp_path / "bundle", iris_web=tmp_path / "nowhere")
+
+
+def _iris(plots):
+    """A `.iris` with `plots` analyses, as eln.figures counts them."""
+    import io
+    import zipfile
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("manifest.json", "{}")
+        for i in range(plots):
+            z.writestr(f"analyses/{i:04d}-plot.json", "{}")
+    return buf.getvalue()
+
+
+def _figure_report(data_root, plots):
+    figures = data_root / "reports" / "weekly" / "figures"
+    figures.mkdir()
+    (figures / "fig.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
+    (figures / "fig.iris").write_bytes(_iris(plots))
+    (figures / "lone.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
+    report = data_root / "reports" / "weekly" / "tfm_progress.md"
+    report.write_text(report.read_text() + "\n![Fig](figures/fig.svg)\n\n![Lone](figures/lone.svg)\n")
+
+
+def test_export_all_links_one_plot_figures_to_a_copy_in_iris(data_root, tmp_path):
+    """A figure the live lab book edits in place opens from the bundle as a detached
+    copy: the image links to the shipped Iris, and the .iris travels as a classic
+    script, because an Iris page opened over file:// cannot fetch a neighbour."""
+    import hashlib
+    import json
+    from eln.share import export_all
+
+    _figure_report(data_root, plots=1)
+    out = tmp_path / "bundle"
+    export_all(data_root, out, iris_web=_fake_iris(tmp_path))
+
+    page = (out / "report-tfm_progress.html").read_text()
+    assert ('<a href="iris/index.html?embedded=../reports/weekly/figures/fig.iris.js" '
+            'title="Open a copy in Iris"><img src="reports/weekly/figures/fig.svg"') in page
+    assert '<img src="reports/weekly/figures/lone.svg"' in page
+    assert 'lone.iris' not in page
+    data = _iris(1)
+    assert (out / "reports" / "weekly" / "figures" / "fig.iris").read_bytes() == data
+    script = (out / "reports" / "weekly" / "figures" / "fig.iris.js").read_text()
+    assert script.startswith("__irisDocument(") and script.rstrip().endswith(");")
+    payload = json.loads(script[len("__irisDocument("):script.rindex(")")])
+    assert payload["name"] == "fig.iris"
+    assert payload["path"] == "reports/weekly/figures/fig.iris"
+    assert payload["sha256"] == hashlib.sha256(data).hexdigest()
+    assert payload["base64"]
+
+
+def test_export_all_leaves_a_many_plot_figure_alone(data_root, tmp_path):
+    from eln.share import export_all
+
+    _figure_report(data_root, plots=2)
+    out = tmp_path / "bundle"
+    export_all(data_root, out, iris_web=_fake_iris(tmp_path))
+
+    page = (out / "report-tfm_progress.html").read_text()
+    assert "embedded=" not in page
+    assert (out / "reports" / "weekly" / "figures" / "fig.svg").is_file()
+    assert not (out / "reports" / "weekly" / "figures" / "fig.iris").exists()
+
+
+def test_export_all_without_iris_ships_no_figure_copies(data_root, tmp_path):
+    from eln.share import export_all
+
+    _figure_report(data_root, plots=1)
+    out = tmp_path / "bundle"
+    export_all(data_root, out)
+
+    assert "embedded=" not in (out / "report-tfm_progress.html").read_text()
+    assert not (out / "reports" / "weekly" / "figures" / "fig.iris.js").exists()

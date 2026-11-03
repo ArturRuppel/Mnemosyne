@@ -197,8 +197,13 @@ A served Iris can edit figures in place. Set `iris_url` in `labbook.toml` and gi
 figure a pair of files with one stem: `name.svg`, and `name.iris` holding exactly one
 plot. The image on the live page then opens in Iris, tied to that file. Save to lab
 book rewrites both files and adds a line to `name.log.jsonl`. Commit all three in the
-data repo to keep that state, because a save does not commit. The static export stays
-read-only.
+data repo to keep that state, because a save does not commit.
+
+The static export never writes back. With `iris_web` set, each such figure in the
+bundle links to the shipped Iris as "Open a copy in Iris": the `.iris` travels beside
+its SVG, also as `name.iris.js` (a classic script, since a page opened over `file://`
+cannot fetch a neighbour), and a colleague's Save produces a file on their own disk
+that keeps the figure's provenance and records which figure it was derived from.
 
 ## How the project is organized
 

@@ -8,12 +8,16 @@ so the generators' relative media links (``reports/…``, ``presentations/…``)
 untouched. Only files the pages actually reference are copied.
 """
 
+import base64
+import hashlib
 import json
 import os
 import re
 import shutil
 from pathlib import Path
+from urllib.parse import quote
 
+from eln.figures import FigureError, plot_count
 from eln.generators.chrome import bake
 from eln.generators import generate_all
 from eln.generators.protocols import generate_protocol_catalog
@@ -106,6 +110,49 @@ def _add_iris_link(html):
     """Append the Iris link to a page's nav block, for a bundle that ships Iris."""
     return _NAV_END.sub(lambda m: f'{m.group(1)}\n        <a href="iris/index.html">Iris</a>{m.group(2)}',
                         html, count=1)
+
+
+# An SVG image on a page, and the start of a link that already wraps one.
+_FIGURE_IMG = re.compile(r'<img\b[^>]*\bsrc="([^"?#]+\.svg)"[^>]*>')
+_LINK_BEFORE = re.compile(r'<a\b[^>]*>\s*$')
+
+
+def _figure_script(rel, data):
+    """The figure as a classic script, the one way an Iris page opened over
+    ``file://`` can read a file beside it (the web build ships Pyodide the same way).
+    The path and hash let a copy saved from Iris say which figure it came from."""
+    payload = {"name": Path(rel).name, "path": rel,
+               "sha256": hashlib.sha256(data).hexdigest(),
+               "base64": base64.b64encode(data).decode("ascii")}
+    return f"__irisDocument({json.dumps(payload)});\n"
+
+
+def _link_figures(html, root, dest):
+    """Link each SVG image with a one-plot ``.iris`` beside it (the live lab book's
+    editable figures) to the shipped Iris, which opens a detached copy: the bundle
+    has no server, so nothing a colleague does there reaches the report. The
+    ``.iris`` is copied in as itself and as ``name.iris.js``."""
+    root, dest = Path(root), Path(dest)
+
+    def wrap(m):
+        rel = m.group(1)[:-4] + ".iris"
+        src = root / rel
+        if rel.startswith("..") or not src.is_file() or _LINK_BEFORE.search(html, 0, m.start()):
+            return m.group(0)
+        data = src.read_bytes()
+        try:
+            if plot_count(data) != 1:
+                return m.group(0)
+        except FigureError:
+            return m.group(0)
+        out = dest / rel
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(data)
+        out.with_name(out.name + ".js").write_text(_figure_script(rel, data), encoding="utf-8")
+        href = "iris/index.html?embedded=" + quote("../" + rel + ".js", safe="/")
+        return f'<a href="{href}" title="Open a copy in Iris">{m.group(0)}</a>'
+
+    return _FIGURE_IMG.sub(wrap, html)
 
 
 def _copy_iris(iris_web, dest):
@@ -261,7 +308,7 @@ def export_all(root, dest, iris_web=None):
         generated.add(rel)
         text = _staticize(Path(path).read_text())
         if iris_web is not None:
-            text = _add_iris_link(text)
+            text = _link_figures(_add_iris_link(text), root, dest)
         Path(path).write_text(text)
         start_pages.append(("", text))
 
