@@ -193,6 +193,13 @@ To ship [Iris](https://github.com/ArturRuppel/Iris) with `--all`, build it with
 `npm run build:web` and set `iris_web` in `labbook.toml` to the resulting `dist-web`
 folder. The export copies it to `iris/`, about 96 MB, and adds an Iris link to the nav.
 
+A served Iris can edit figures in place. Set `iris_url` in `labbook.toml` and give a
+figure a pair of files with one stem: `name.svg`, and `name.iris` holding exactly one
+plot. The image on the live page then opens in Iris, tied to that file, and each edit
+rewrites both files. Previous states are kept in `.versions/name/` beside them, with
+`log.jsonl` recording every save, because the data repo does not track `*.iris`.
+Add `.versions/` to the data repo's ignore rules. The static export stays read-only.
+
 ## How the project is organized
 
 ```

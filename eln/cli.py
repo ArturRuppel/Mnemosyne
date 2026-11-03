@@ -80,6 +80,7 @@ def cmd_admin(args):
         channel_aliases=config.channel_aliases,
         scanner=config.scanner,
         timestamp=config.timestamp,
+        iris_url=config.iris_url,
     )
     display_host = "localhost" if args.host == "0.0.0.0" else args.host
     url = f"http://{display_host}:{args.port}/"
@@ -230,6 +231,7 @@ def cmd_backup(args):
         channel_aliases=config.channel_aliases,
         scanner=config.scanner,
         timestamp=config.timestamp,
+        iris_url=config.iris_url,
     )
     display_host = "localhost" if args.host == "0.0.0.0" else args.host
     url = f"http://{display_host}:{args.port}/"

@@ -400,4 +400,39 @@
             row.appendChild(td);
         });
     }
+
+    // --- Figures editable in Iris ---
+    // An SVG with a same-named one-plot .iris beside it opens in Iris bound to that
+    // file. Saves land in the SVG, so the image reloads when this tab is shown again.
+    const figureImages = Array.from(document.querySelectorAll('img[src$=".svg"]'));
+    figureImages.forEach(function(img) {
+        const svg = new URL(img.src);
+        if (svg.origin !== location.origin) return;
+        const iris = svg.pathname.replace(/\.svg$/, '.iris');
+        fetch('/api/figures' + iris)
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(figure) {
+                if (!figure || !figure.iris_url || figure.plots !== 1) return;
+                const href = figure.iris_url.replace(/\/$/, '') + '/?labbook='
+                    + encodeURIComponent(location.origin + iris);
+                let link = img.closest('a');
+                if (!link) {
+                    link = document.createElement('a');
+                    img.replaceWith(link);
+                    link.appendChild(img);
+                }
+                link.href = href;
+                link.target = '_blank';
+                link.title = 'Edit in Iris';
+            })
+            .catch(function() {});
+    });
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState !== 'visible') return;
+        figureImages.forEach(function(img) {
+            const url = new URL(img.src);
+            url.searchParams.set('t', Date.now());
+            img.src = url.href;
+        });
+    });
 })();

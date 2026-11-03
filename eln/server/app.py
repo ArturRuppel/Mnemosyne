@@ -24,8 +24,12 @@ from datetime import datetime
 from pathlib import Path
 
 import nbformat
+import base64
+import binascii
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_cors import CORS
+
+from eln.figures import FigureError, describe_figure, resolve_figure, save_figure
 from werkzeug.security import safe_join
 
 from eln.channels import build_alias_map, canonical_channel
@@ -204,7 +208,8 @@ def _apply_markdown_cell_edits(path, edits):
 
 
 def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
-               scan_roots=None, channel_aliases=None, scanner=None, timestamp=None):
+               scan_roots=None, channel_aliases=None, scanner=None, timestamp=None,
+               iris_url=None):
     """Build the Flask app bound to data-repo ``root``.
 
     ``scan_roots`` is the injected list of scan-root configs (from the unified
@@ -1234,6 +1239,40 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
             return jsonify({"error": "Invalid filename"}), 400
         rel = report_path.relative_to(root.resolve()).as_posix()
         return jsonify({"versions": file_history(root, rel)})
+
+    # ==================== FIGURES ====================
+    # A one-plot .iris and the SVG beside it, edited from Iris (see eln/figures.py).
+
+    @app.route("/api/figures/<path:rel>", methods=["GET"])
+    def get_figure(rel):
+        path = resolve_figure(root, rel)
+        if path is None:
+            return jsonify({"error": "Figure not found"}), 404
+        try:
+            return jsonify({**describe_figure(path), "iris_url": iris_url})
+        except FigureError as e:
+            return jsonify({"error": str(e)}), e.status
+
+    @app.route("/api/figures/<path:rel>", methods=["PUT"])
+    def put_figure(rel):
+        # flask_cors answers every origin, so the origin is checked here: a page
+        # elsewhere must not be able to rewrite a figure.
+        if not iris_url or request.headers.get("Origin") not in (
+                iris_url.rstrip("/"), request.host_url.rstrip("/")):
+            return jsonify({"error": "Saving is only allowed from the configured Iris"}), 403
+        path = resolve_figure(root, rel)
+        if path is None:
+            return jsonify({"error": "Figure not found"}), 404
+        data = request.json or {}
+        try:
+            iris = base64.b64decode(data.get("iris_base64", ""), validate=True)
+            sha = save_figure(path, iris, data.get("svg", ""),
+                              data.get("base_sha256"), data.get("session"))
+        except binascii.Error:
+            return jsonify({"error": "not a .iris file"}), 422
+        except FigureError as e:
+            return jsonify({"error": str(e)}), e.status
+        return jsonify({"sha256": sha})
 
     # ==================== DOCUMENTS ====================
     # Documents are freeform, series-less write-ups stored as files under
