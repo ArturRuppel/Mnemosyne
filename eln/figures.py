@@ -1,23 +1,21 @@
 """Lab-book figures: a one-plot ``.iris`` and the SVG beside it, edited from Iris.
 
-The data repo ignores ``*.iris``, so git holds no earlier state of these files.
-``<dir>/.versions/<stem>/`` is their history instead: the first save of an editing
-session copies the previous pair there, and every save appends a line to
-``log.jsonl`` that carries the hash of the line before it.
+The data repo tracks both files, so earlier states live in git once committed. A
+save does not commit: ``<stem>.log.jsonl`` beside the figure records every save, each
+line carrying the hash of the line before it, so that a save never committed still
+leaves a trace.
 """
 
 import hashlib
 import io
 import json
 import os
-import shutil
 import threading
 import zipfile
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSIONS_DIR = ".versions"
 FIGURE_ROOTS = ("documents", "reports")
 
 _save_lock = threading.Lock()
@@ -38,7 +36,7 @@ def resolve_figure(root, rel):
         return None
     base = (Path(root) / parts[0]).resolve()
     path = (Path(root) / rel).resolve()
-    if base not in path.parents or VERSIONS_DIR in path.parts:
+    if base not in path.parents:
         return None
     return path
 
@@ -79,12 +77,12 @@ def _write_atomic(path, data):
     os.replace(tmp, path)
 
 
-def _versions_dir(path):
-    return path.parent / VERSIONS_DIR / path.stem
+def _log_path(path):
+    return path.with_name(f"{path.stem}.log.jsonl")
 
 
 def read_history(path):
-    log = _versions_dir(path) / "log.jsonl"
+    log = _log_path(path)
     if not log.exists():
         return []
     return [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
@@ -99,7 +97,7 @@ def describe_figure(path):
 
 
 def save_figure(path, iris, svg, base_sha256, session):
-    """Replace the pair at ``path``, keeping what it replaces. Returns the new hash."""
+    """Replace the pair at ``path`` and log the save. Returns the new hash."""
     if not session:
         raise FigureError(422, "a save needs a session")
     plots = plot_count(iris)
@@ -113,31 +111,18 @@ def save_figure(path, iris, svg, base_sha256, session):
         if before != base_sha256:
             raise FigureError(409, "the file changed since it was opened; reload to continue")
 
-        svg_path = path.with_suffix(".svg")
-        versions = _versions_dir(path)
-        versions.mkdir(parents=True, exist_ok=True)
-        log = versions / "log.jsonl"
+        log = _log_path(path)
         lines = log.read_bytes().splitlines() if log.exists() else []
-        history = [json.loads(line) for line in lines]
-        now = datetime.now(timezone.utc)
-        snapshot = None
-        if not any(entry["session"] == session for entry in history):
-            snapshot = now.strftime("%Y%m%dT%H%M%S%fZ")
-            shutil.copy2(path, versions / f"{snapshot}.iris")
-            if svg_path.exists():
-                shutil.copy2(svg_path, versions / f"{snapshot}.svg")
-
         after = _sha256(iris)
         entry = {
-            "time": now.isoformat(),
+            "time": datetime.now(timezone.utc).isoformat(),
             "session": session,
             "before": before,
             "after": after,
-            "snapshot": snapshot,
             "previous_line": _sha256(lines[-1]) if lines else None,
         }
         with log.open("a", encoding="utf-8") as f:
             f.write(json.dumps(entry) + "\n")
         _write_atomic(path, iris)
-        _write_atomic(svg_path, svg.encode("utf-8"))
+        _write_atomic(path.with_suffix(".svg"), svg.encode("utf-8"))
     return after

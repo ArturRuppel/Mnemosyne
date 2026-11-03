@@ -20,9 +20,10 @@ URL = f"/api/figures/{FIGURE}"
 def iris_bytes(plots=1, marker="a"):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as z:
-        z.writestr("manifest.json", json.dumps({"marker": marker}))
+        # a fixed date, so that two builds of one file are the same bytes
+        z.writestr(zipfile.ZipInfo("manifest.json"), json.dumps({"marker": marker}))
         for i in range(plots):
-            z.writestr(f"analyses/{i:04d}-plot.json", "{}")
+            z.writestr(zipfile.ZipInfo(f"analyses/{i:04d}-plot.json"), "{}")
     return buf.getvalue()
 
 
@@ -70,23 +71,16 @@ def test_save_replaces_the_pair(client, root):
     assert (folder / "fig.svg").read_text() == SVG
 
 
-def test_one_snapshot_per_session_and_a_chained_log(client, root):
+def test_every_save_extends_a_chained_log(client, root):
     a, b, c = iris_bytes(), iris_bytes(marker="b"), iris_bytes(marker="c")
     put(client, b, sha(a))
-    put(client, c, sha(b))
-    put(client, a, sha(c), session="s2")
-    versions = root / "documents/note/analysis/.versions/fig"
-    snapshots = sorted(versions.glob("*.iris"))
-    assert [p.read_bytes() for p in snapshots] == [a, c]
-    assert len(list(versions.glob("*.svg"))) == 2
-
-    lines = (versions / "log.jsonl").read_bytes().splitlines()
-    assert len(lines) == 3
+    put(client, c, sha(b), session="s2")
+    lines = (root / "documents/note/analysis/fig.log.jsonl").read_bytes().splitlines()
     entries = [json.loads(line) for line in lines]
+    assert [(e["before"], e["after"], e["session"]) for e in entries] == [
+        (sha(a), sha(b), "s1"), (sha(b), sha(c), "s2")]
     assert entries[0]["previous_line"] is None
     assert entries[1]["previous_line"] == sha(lines[0])
-    assert entries[2]["previous_line"] == sha(lines[1])
-    assert [e["snapshot"] is not None for e in entries] == [True, False, True]
     assert client.get(URL).get_json()["history"] == entries
 
 
@@ -101,7 +95,7 @@ def test_refuses_a_file_changed_since_it_was_opened(client, root):
     r = put(client, iris_bytes(marker="b"), "stale")
     assert r.status_code == 409
     assert (root / FIGURE).read_bytes() == iris_bytes()
-    assert not (root / "documents/note/analysis/.versions").exists()
+    assert not (root / "documents/note/analysis/fig.log.jsonl").exists()
 
 
 def test_refuses_another_origin(client):
@@ -126,7 +120,6 @@ def test_refuses_a_bad_svg(client, svg):
 
 @pytest.mark.parametrize("rel", [
     "documents/../experiments.db", "documents/note/x.txt", "catalog/x.iris",
-    "documents/note/analysis/.versions/fig/x.iris",
 ])
 def test_refuses_paths_outside_the_figures(client, rel):
     r = put(client, iris_bytes(), "x", url=f"/api/figures/{rel}")

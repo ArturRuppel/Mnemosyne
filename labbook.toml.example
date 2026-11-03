@@ -8,7 +8,7 @@ data_root = "/abs/path/to/data-repo"
 # ships under iris/.
 # iris_web = "/path/to/Iris/dist-web"
 # A served Iris. An SVG figure with a same-named one-plot .iris beside it then links
-# there, and edits made in Iris are saved back to both files.
+# there, and Save to lab book in Iris rewrites both files.
 # iris_url = "https://host:8766"
 
 [scanner]
