@@ -141,8 +141,10 @@ CACHEABLE_API_PATHS = {"/api/sdgl/tree"}
 _HEAD_CLOSE_RE = re.compile(rb"</head\s*>", re.IGNORECASE)
 _BODY_CLOSE_RE = re.compile(rb"</body\s*>", re.IGNORECASE)
 
-# Each report's own page, written next to reports.html by the reports generator.
-_REPORT_PAGE_RE = re.compile(r"report-[^/]+\.html")
+# Each report's own page, written next to reports.html by the reports generator,
+# and each collaboration's own page, written the same way by the collaborations
+# generator.
+_REPORT_PAGE_RE = re.compile(r"(?:report|collaboration)-[^/]+\.html")
 
 _AUTH_SCRIPT_RE = re.compile(r'<script\s+src=["\']auth\.js["\']\s*>\s*</script>')
 

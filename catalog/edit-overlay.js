@@ -337,6 +337,21 @@
         });
     }
 
+    if (/^collaboration-.+\.html$/.test(page)) {
+        // A collaboration's own page: a document rendered open. Edit opens the
+        // same document form as on documents.html.
+        document.querySelectorAll('.report-card').forEach(function(card) {
+            var src = card.getAttribute('data-report-src');
+            var filename = src ? src.replace(/^documents\//, '') : null;
+            var header = card.querySelector('.report-header');
+            if (!filename || !header) return;
+            var cluster = cardActions(header, header.querySelector('.report-date'));
+            cluster.appendChild(clusterButton('Edit', function() {
+                window.elnForms.openDocumentForm(filename);
+            }));
+        });
+    }
+
     if (page === 'posters.html') {
         // Each card gets a Remove action; a page-level Add opens the poster form
         // (pick a title + an SVG already in the posters/ folder).

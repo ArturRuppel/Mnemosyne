@@ -148,7 +148,7 @@ _HTML_SUFFIXES = {".html", ".htm"}
 # missing assets.
 _CATALOG_PAGES = {"index.html", "experiments.html", "protocols.html",
                   "reports.html", "presentations.html", "documents.html",
-                  "posters.html", "sdgl.html"}
+                  "collaborations.html", "posters.html", "sdgl.html"}
 
 
 def _collect_assets(start_pages, root, dest, generated):

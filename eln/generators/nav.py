@@ -26,6 +26,7 @@ NAV_ORDER = [
     "Data Explorer",
     "Code",
     "Documents",
+    "Collaborations",
     "Presentations",
     "Posters",
 ]

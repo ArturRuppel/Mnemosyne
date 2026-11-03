@@ -37,6 +37,17 @@ def test_documents_declares_nav_generator_and_mount():
     assert docs.static_mount.url_prefix == "documents"
 
 
+def test_collaborations_declares_nav_and_generator_after_documents():
+    plugins = discover_plugins()
+    names = [p.name for p in plugins]
+    collab = plugins[names.index("collaborations")]
+    assert isinstance(collab.nav, NavLink)
+    assert collab.nav.href == "collaborations.html"
+    assert callable(collab.generate)
+    assert collab.static_mount is None  # the documents mount serves the media
+    assert names.index("collaborations") > names.index("documents")
+
+
 def test_entry_point_plugins_are_merged(monkeypatch):
     extra = Plugin(name="widgets", nav=NavLink("Widgets", "widgets.html"))
 

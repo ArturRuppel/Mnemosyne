@@ -116,11 +116,12 @@ def test_generate_all_writes_all_pages(data_root):
     written = generate_all(root)
     catalog = root / "catalog"
     for page in ("experiments.html", "protocols.html", "reports.html",
-                 "presentations.html", "documents.html", "code.html",
-                 "posters.html"):
+                 "presentations.html", "documents.html", "collaborations.html",
+                 "code.html", "posters.html"):
         assert (catalog / page).exists(), f"{page} missing"
     assert set(written) == {"experiments", "protocols", "reports",
-                            "presentations", "documents", "code", "posters"}
+                            "presentations", "documents", "collaborations", "code",
+                            "posters"}
     assert not (catalog / "explorers.html").exists()
 
 

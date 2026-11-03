@@ -17,12 +17,29 @@ plugin uses only the points it needs:
 | `register_routes` | **serving route** | `register_routes(app, root)` — register arbitrary Flask routes |
 | `scan_roots` | **scan-root contribution** | `scan_roots(root) -> list` — extra SDGL scan roots |
 
+## The Documents and Collaborations tabs
+
+The built-in **Documents** plugin scans `ROOT/documents`, one folder per
+document, and renders each markdown or notebook file as a collapsible card on
+`documents.html`. The built-in **Collaborations** plugin reads the same folder.
+A document is a collaboration when its front matter contains a line such as
+`**Collaborators:** Name, Name`, written in the same bold-key style as
+`**Date:**` and `**Author:**`. Such a document appears only on
+`collaborations.html`, as a tile with its title, date, a "with ..." byline, a
+preview image and a two-sentence summary. Each tile links to its own page,
+`collaboration-<slug>.html`, which shows the document open. The file itself
+stays under `documents/`, so existing links and the document edit API keep
+working, and an old `documents.html#<slug>` link to a document that became a
+collaboration redirects to its new page. A `**Thumbnail:** file` line, relative
+to the document's folder, selects the preview image; otherwise the first image
+in the document is used.
+
 ## Discovery
 
 `discover_plugins()` merges two sources, deduped by `name` with **built-ins
 winning**:
 
-1. **In-tree** — `BUILTIN_PLUGINS` (currently just presentations).
+1. **In-tree** — `BUILTIN_PLUGINS` (presentations, documents, collaborations, code, posters, explorers).
 2. **Third-party** — any installed package exposing a `plugin` object under the
    `eln.plugins` entry-point group.
 

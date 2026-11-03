@@ -464,6 +464,11 @@ REPORTS_HTML_TEMPLATE = """<!DOCTYPE html>
             color: var(--hm-dim);
             margin: 0.15rem 0 0.7rem;
         }}
+        .tile-byline {{
+            font-size: 0.82rem;
+            color: var(--hm-dim);
+            margin: -0.55rem 0 0.7rem;
+        }}
         .tile-thumb {{
             display: flex;
             align-items: center;
@@ -1161,7 +1166,8 @@ def _rewrite_relative_links(content, report_dir):
         # ``source/reports/CODE/protocols.html#6`` file.
         if path in {
             "index.html", "experiments.html", "protocols.html", "reports.html",
-            "presentations.html", "documents.html", "posters.html", "sdgl.html",
+            "presentations.html", "documents.html", "collaborations.html",
+            "posters.html", "sdgl.html",
         }:
             return m.group(0)
         resolved = posixpath.normpath(f"{report_dir}/{path}")

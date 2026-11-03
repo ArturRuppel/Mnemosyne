@@ -15,6 +15,7 @@ EXPECTED = (
     '        <a href="sdgl.html">Data Explorer</a>\n'
     '        <a href="code.html">Code</a>\n'
     '        <a href="documents.html">Documents</a>\n'
+    '        <a href="collaborations.html">Collaborations</a>\n'
     '        <a href="presentations.html">Presentations</a>\n'
     '        <a href="posters.html">Posters</a>\n'
     '    </div>'
