@@ -103,6 +103,15 @@ def test_refuses_another_origin(client):
     assert r.status_code == 403
 
 
+def test_accepts_an_iris_served_under_a_path(root):
+    # the lab book can mount Iris at /iris on its own origin: the Origin header
+    # then carries the origin alone
+    app = create_app(root, scan_roots=[], iris_url="https://lab.example:5001/iris")
+    app.config.update(TESTING=True)
+    r = put(app.test_client(), iris_bytes(marker="b"), sha(iris_bytes()), origin="https://lab.example:5001")
+    assert r.status_code == 200
+
+
 def test_refuses_saves_when_iris_is_not_configured(root):
     app = create_app(root, scan_roots=[])
     r = put(app.test_client(), iris_bytes(marker="b"), sha(iris_bytes()))

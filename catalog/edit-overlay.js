@@ -414,7 +414,8 @@
             .then(function(figure) {
                 if (!figure || !figure.iris_url || figure.plots !== 1) return;
                 const href = figure.iris_url.replace(/\/$/, '') + '/?labbook='
-                    + encodeURIComponent(location.origin + iris);
+                    + encodeURIComponent(location.origin + iris)
+                    + '&back=' + encodeURIComponent(location.href);
                 let link = img.closest('a');
                 if (!link) {
                     link = document.createElement('a');
@@ -422,7 +423,9 @@
                     link.appendChild(img);
                 }
                 link.href = href;
-                link.target = '_blank';
+                // a new tab on the desktop; the installed app (iPad) has one window,
+                // so it navigates there and Iris shows a link back
+                if (!window.matchMedia('(display-mode: standalone)').matches) link.target = '_blank';
                 link.title = 'Edit in Iris';
             })
             .catch(function() {});

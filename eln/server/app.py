@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import sys
 import threading
+from urllib.parse import urlsplit
 from datetime import datetime
 from pathlib import Path
 
@@ -205,6 +206,12 @@ def _apply_markdown_cell_edits(path, edits):
             raise ValueError(f"cell {idx} is not a markdown cell")
         nb.cells[idx].source = edit.get("source", "")
     nbformat.write(nb, str(path))
+
+
+def _origin(url):
+    """scheme://host[:port] of a URL, which is what an Origin header carries."""
+    u = urlsplit(url)
+    return f"{u.scheme}://{u.netloc}"
 
 
 def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
@@ -1257,8 +1264,10 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
     def put_figure(rel):
         # flask_cors answers every origin, so the origin is checked here: a page
         # elsewhere must not be able to rewrite a figure.
+        # the configured Iris may live under a path (https://host:5001/iris), so
+        # its origin is compared, not the whole URL
         if not iris_url or request.headers.get("Origin") not in (
-                iris_url.rstrip("/"), request.host_url.rstrip("/")):
+                _origin(iris_url), request.host_url.rstrip("/")):
             return jsonify({"error": "Saving is only allowed from the configured Iris"}), 403
         path = resolve_figure(root, rel)
         if path is None:

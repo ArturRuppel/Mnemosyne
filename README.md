@@ -197,7 +197,12 @@ A served Iris can edit figures in place. Set `iris_url` in `labbook.toml` and gi
 figure a pair of files with one stem: `name.svg`, and `name.iris` holding exactly one
 plot. The image on the live page then opens in Iris, tied to that file. Save to lab
 book rewrites both files and adds a line to `name.log.jsonl`. Commit all three in the
-data repo to keep that state, because a save does not commit.
+data repo to keep that state, because a save does not commit. The link opens a new
+tab, except in the installed app, where it navigates in place and Iris shows a link
+back. iPadOS opens a foreign origin from an installed web app in an in-app browser,
+so to keep it in the app, mount the served Iris under the lab book's own origin
+(`tailscale serve --https=<port> --set-path=/iris http://127.0.0.1:8766`) and point
+`iris_url` at that path.
 
 The static export never writes back. With `iris_web` set, each such figure in the
 bundle links to the shipped Iris as "Open a copy in Iris": the `.iris` travels beside
