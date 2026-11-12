@@ -67,6 +67,15 @@ def _ensure_db(config):
     return db
 
 
+def _served_hosts(config, args):
+    """The Host names the server answers to beyond loopback: the configured
+    ``allowed_hosts``, plus the bind address when it is a specific one."""
+    hosts = list(config.allowed_hosts)
+    if args.host not in ("0.0.0.0", "::", ""):
+        hosts.append(args.host)
+    return hosts
+
+
 # ---- subcommand handlers -------------------------------------------------
 
 def cmd_admin(args):
@@ -81,6 +90,7 @@ def cmd_admin(args):
         scanner=config.scanner,
         timestamp=config.timestamp,
         iris_url=config.iris_url,
+        allowed_hosts=_served_hosts(config, args),
     )
     display_host = "localhost" if args.host == "0.0.0.0" else args.host
     url = f"http://{display_host}:{args.port}/"
@@ -232,6 +242,7 @@ def cmd_backup(args):
         scanner=config.scanner,
         timestamp=config.timestamp,
         iris_url=config.iris_url,
+        allowed_hosts=_served_hosts(config, args),
     )
     display_host = "localhost" if args.host == "0.0.0.0" else args.host
     url = f"http://{display_host}:{args.port}/"

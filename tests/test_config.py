@@ -175,3 +175,22 @@ def test_find_config_path_derives_from_package(monkeypatch):
     path = find_config_path()
     assert path.name == "labbook.toml"
     assert (path.parent / "pyproject.toml").exists()
+
+
+def test_allowed_hosts_from_file_and_env(tmp_path, monkeypatch):
+    data = tmp_path / "data-repo"
+    data.mkdir()
+    cfg = tmp_path / "labbook.toml"
+    cfg.write_text(f'data_root = "{data}"\nallowed_hosts = ["lab.example", " "]\n',
+                   encoding="utf-8")
+    monkeypatch.delenv("LABBOOK_ALLOWED_HOSTS", raising=False)
+    assert load_config(cfg).allowed_hosts == ["lab.example"]
+    monkeypatch.setenv("LABBOOK_ALLOWED_HOSTS", "a.example, b.example:5001,")
+    assert load_config(cfg).allowed_hosts == ["lab.example", "a.example", "b.example:5001"]
+
+
+def test_allowed_hosts_default_empty(tmp_path, monkeypatch):
+    data = tmp_path / "data-repo"
+    data.mkdir()
+    monkeypatch.delenv("LABBOOK_ALLOWED_HOSTS", raising=False)
+    assert load_config(_write_config(tmp_path, data)).allowed_hosts == []

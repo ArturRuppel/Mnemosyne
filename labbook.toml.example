@@ -11,6 +11,13 @@ data_root = "/abs/path/to/data-repo"
 # there, and Save to lab book in Iris rewrites both files.
 # iris_url = "https://host:8766"
 
+# Host names the server answers to besides localhost / 127.0.0.1 / [::1] (and the
+# host of iris_url, and the --host address it is bound to). Requests carrying any
+# other Host get 400, which keeps a hostile web page from reaching the API by DNS
+# rebinding. Add the name a reverse proxy or a LAN address publishes it under
+# (a port, if given, is ignored). LABBOOK_ALLOWED_HOSTS (comma-separated) adds more.
+# allowed_hosts = ["machine.example.ts.net"]
+
 [scanner]
 run_on_startup = false
 daily_scan = false

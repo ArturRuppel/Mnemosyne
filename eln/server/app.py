@@ -28,7 +28,6 @@ import nbformat
 import base64
 import binascii
 from flask import Flask, Response, jsonify, request, send_from_directory
-from flask_cors import CORS
 
 from eln.figures import FigureError, describe_figure, resolve_figure, save_figure
 from werkzeug.security import safe_join
@@ -214,9 +213,46 @@ def _origin(url):
     return f"{u.scheme}://{u.netloc}"
 
 
+# Names the server always answers to. Anything else in the Host header is refused
+# (DNS rebinding: a page on a hostile name that resolves to 127.0.0.1 would
+# otherwise be same-origin with this unauthenticated API).
+LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+_SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+# The only routes a cross-origin page may call: the configured Iris saving a figure.
+_IRIS_CORS_PREFIX = "/api/figures/"
+
+
+def _hostname(netloc):
+    """Lower-cased host of a ``host[:port]`` (brackets of an IPv6 literal dropped),
+    or None if it does not parse."""
+    try:
+        return urlsplit(f"//{netloc}").hostname
+    except ValueError:
+        return None
+
+
+def _allowed_host_names(allowed_hosts, iris_url):
+    """Loopback, the configured extra names (bare names or ``host:port``; the port
+    is ignored), and the host of the configured Iris: whoever set ``iris_url``
+    trusts that name, and a path-mounted Iris shares the lab book's own."""
+    names = set(LOOPBACK_HOSTS)
+    for entry in allowed_hosts or ():
+        entry = str(entry).strip()
+        if entry.count(":") > 1 and not entry.startswith("["):
+            entry = f"[{entry}]"  # a bare IPv6 address
+        name = _hostname(urlsplit(entry).netloc if "//" in entry else entry)
+        if name:
+            names.add(name)
+    if iris_url:
+        name = urlsplit(iris_url).hostname
+        if name:
+            names.add(name)
+    return frozenset(names)
+
+
 def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
                scan_roots=None, channel_aliases=None, scanner=None, timestamp=None,
-               iris_url=None):
+               iris_url=None, allowed_hosts=None):
     """Build the Flask app bound to data-repo ``root``.
 
     ``scan_roots`` is the injected list of scan-root configs (from the unified
@@ -225,6 +261,8 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
     config); it drives fungible-marker collapsing in the field-values endpoint.
     ``scanner`` is the ``[scanner]`` config table; it supplies the content-hashing
     settings used by the scan route and background scan.
+    ``allowed_hosts`` lists the Host names, besides loopback and the ``iris_url``
+    host, that requests may carry (see :func:`_allowed_host_names`).
     """
     root = Path(root)
     database_path = Path(eln_db_path) if eln_db_path else root / "experiments.db"
@@ -236,7 +274,63 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
     assets = Path(assets_dir) if assets_dir else ASSETS_DIR
 
     app = Flask(__name__)
-    CORS(app)  # Enable CORS for local development
+
+    # ---- origin guard ------------------------------------------------------
+    # The API is unauthenticated, so who may call it is decided by the browser's
+    # own headers. No CORS is offered, except to the configured Iris on the
+    # figure routes, so other pages cannot read responses; writes from a foreign
+    # Origin are refused outright; and a Host outside the allow-list is refused,
+    # which closes DNS rebinding. Requests without an Origin (curl, the CLI,
+    # agents on loopback) are not browser cross-origin requests and pass.
+    host_names = _allowed_host_names(allowed_hosts, iris_url)
+    iris_origin = _origin(iris_url).lower() if iris_url else None
+
+    def same_origin(origin):
+        """An Origin naming the host this request came in on. The scheme is not
+        compared: behind a TLS-terminating proxy the browser says https while
+        the request reaching Flask is plain http."""
+        u = urlsplit(origin)
+        return u.scheme in ("http", "https") and u.netloc.lower() == request.host.lower()
+
+    def iris_cross_origin():
+        """The request comes from the configured Iris on its own origin, to a route
+        that Iris uses."""
+        origin = (request.headers.get("Origin") or "").lower()
+        return (iris_origin is not None and origin == iris_origin
+                and not same_origin(origin)
+                and request.path.startswith(_IRIS_CORS_PREFIX))
+
+    def origin_allowed(origin):
+        """Same-origin, or the configured Iris (a figure save)."""
+        return bool(origin) and (same_origin(origin) or (
+            iris_origin is not None and origin.lower() == iris_origin))
+
+    @app.before_request
+    def guard_origin():
+        if _hostname(request.host) not in host_names:
+            return jsonify({"error": "Host not allowed. Add the name this server is "
+                            "reached by to allowed_hosts in labbook.toml."}), 400
+        if request.method in _SAFE_METHODS or iris_cross_origin():
+            return None
+        origin = request.headers.get("Origin")
+        if origin is not None and not same_origin(origin):
+            return jsonify({"error": "Cross-origin request refused"}), 403
+        if request.headers.get("Sec-Fetch-Site") == "cross-site":
+            return jsonify({"error": "Cross-site request refused"}), 403
+        return None
+
+    @app.after_request
+    def iris_cors(resp):
+        # CORS for exactly one origin (the configured Iris) on the figure routes.
+        if request.path.startswith(_IRIS_CORS_PREFIX):
+            resp.headers.add("Vary", "Origin")
+            if iris_cross_origin():
+                resp.headers["Access-Control-Allow-Origin"] = request.headers["Origin"]
+                if request.method == "OPTIONS":
+                    resp.headers["Access-Control-Allow-Methods"] = "GET, PUT"
+                    resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+                    resp.headers["Access-Control-Max-Age"] = "600"
+        return resp
 
     channel_alias_map = build_alias_map(channel_aliases)
 
@@ -1262,12 +1356,10 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
 
     @app.route("/api/figures/<path:rel>", methods=["PUT"])
     def put_figure(rel):
-        # flask_cors answers every origin, so the origin is checked here: a page
-        # elsewhere must not be able to rewrite a figure.
-        # the configured Iris may live under a path (https://host:5001/iris), so
-        # its origin is compared, not the whole URL
-        if not iris_url or request.headers.get("Origin") not in (
-                _origin(iris_url), request.host_url.rstrip("/")):
+        # Stricter than the app-wide guard: a figure is only rewritten by Iris, so
+        # a save needs Iris configured and an Origin (the configured Iris, which
+        # may live under a path on this origin, or this origin itself).
+        if not iris_url or not origin_allowed(request.headers.get("Origin")):
             return jsonify({"error": "Saving is only allowed from the configured Iris"}), 403
         path = resolve_figure(root, rel)
         if path is None:

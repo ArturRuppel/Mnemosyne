@@ -28,6 +28,7 @@ except ModuleNotFoundError:  # 3.9 / 3.10
 CONFIG_FILENAME = "labbook.toml"
 ENV_CONFIG = "LABBOOK_CONFIG"
 ENV_ROOT = "ELN_ROOT"
+ENV_ALLOWED_HOSTS = "LABBOOK_ALLOWED_HOSTS"
 
 
 @dataclass
@@ -41,6 +42,9 @@ class Config:
     timestamp: dict = field(default_factory=dict)  # [timestamp] table (RFC 3161)
     iris_web: Path | None = None  # a built Iris web site for `labbook export --all`
     iris_url: str | None = None  # a served Iris that opens and saves lab-book figures
+    # Host names (besides loopback) the server answers to, e.g. the name a reverse
+    # proxy publishes it under. Anything else gets 400 (DNS-rebinding guard).
+    allowed_hosts: list = field(default_factory=list)
 
 
 def find_config_path() -> Path:
@@ -131,6 +135,11 @@ def load_config(config_path=None, *, root_override=None) -> Config:
         list(group) for group in data.get("channels", {}).get("aliases", [])
     ]
 
+    # allowed_hosts from the file, plus any in LABBOOK_ALLOWED_HOSTS (comma-separated).
+    allowed_hosts = [str(h).strip() for h in data.get("allowed_hosts", []) if str(h).strip()]
+    allowed_hosts += [h.strip() for h in os.environ.get(ENV_ALLOWED_HOSTS, "").split(",")
+                      if h.strip()]
+
     return Config(
         data_root=data_root,
         scanner=data.get("scanner", {}),
@@ -139,4 +148,5 @@ def load_config(config_path=None, *, root_override=None) -> Config:
         timestamp=data.get("timestamp", {}),
         iris_web=Path(data["iris_web"]).expanduser() if data.get("iris_web") else None,
         iris_url=data.get("iris_url"),
+        allowed_hosts=allowed_hosts,
     )

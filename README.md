@@ -161,6 +161,19 @@ tailscale serve --bg --https=5001 http://127.0.0.1:5001
 # → https://<machine>.<tailnet>.ts.net:5001/  (add it to the home screen)
 ```
 
+The server only answers requests whose `Host` is loopback, the host of `iris_url`,
+or a name listed in `allowed_hosts` in `labbook.toml` (or `LABBOOK_ALLOWED_HOSTS`,
+comma-separated); anything else gets 400. Tailscale Serve passes the browser's
+`Host` through, so list the published name:
+
+```toml
+allowed_hosts = ["<machine>.<tailnet>.ts.net"]
+```
+
+It also refuses writes (POST, PUT, DELETE) from a page on another origin, and
+offers no CORS except to the configured Iris on the figure routes. Scripts and the
+CLI, which send no `Origin`, are unaffected.
+
 HTTPS matters beyond transport: browsers only run service workers in a secure
 context, and the service worker (`catalog/sw.js`) keeps a read-only offline
 cache. Every page, figure, explorer and video you open is stored as it passes

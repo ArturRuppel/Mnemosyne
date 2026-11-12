@@ -3,7 +3,6 @@
 
 # API server
 Flask==3.0.0
-flask-cors==4.0.0
 
 # Config parsing (sdgl.toml). tomllib is stdlib on Python 3.11+;
 # tomli is the backport for 3.9 / 3.10.
