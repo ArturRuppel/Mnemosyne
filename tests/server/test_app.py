@@ -471,6 +471,24 @@ def test_report_at_version_returns_old_content(tmp_path):
     assert data["version"] == oldest
 
 
+@pytest.mark.parametrize("version", [
+    "HEAD", "HEAD~1", "main", "--output=x", "-p", "abc", "ABCDEF0", "a" * 41, "abc1234 ",
+])
+def test_report_at_a_version_that_is_not_a_commit_id_is_refused(tmp_path, version):
+    root = _report_repo(tmp_path)
+    client = create_app(root, scan_roots=[]).test_client()
+    r = client.get("/api/reports/r/r.md", query_string={"version": version})
+    assert r.status_code == 400
+    assert not (root / "x").exists()
+
+
+def test_report_at_an_abbreviated_version(tmp_path):
+    client = create_app(_report_repo(tmp_path), scan_roots=[]).test_client()
+    oldest = client.get("/api/reports/r/r.md/versions").get_json()["versions"][-1]["sha"]
+    data = client.get(f"/api/reports/r/r.md?version={oldest[:7]}").get_json()
+    assert data["content"] == "# v1\n"
+
+
 def test_report_versions_empty_for_untracked(tmp_path):
     app = create_app(_report_repo(tmp_path), scan_roots=[])
     data = app.test_client().get("/api/reports/r/nope.md/versions").get_json()

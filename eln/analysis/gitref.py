@@ -9,8 +9,18 @@ without a commit), rather than crashing.
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
+
+# A commit id as file_history hands them out (abbreviated or full). Anything
+# else, a ref name, "HEAD~2" or a string starting with "-", never reaches git.
+COMMIT_RE = re.compile(r"[0-9a-f]{7,40}")
+
+
+def is_commit_id(sha):
+    """True for a 7-40 character lower-case hex commit id."""
+    return isinstance(sha, str) and COMMIT_RE.fullmatch(sha) is not None
 
 
 def _git(repo_dir, *args):
@@ -91,7 +101,10 @@ def file_history(repo_dir, path):
 def file_at_commit(repo_dir, sha, path):
     """Return the exact text content of ``path`` as of commit ``sha`` (no
     stripping, unlike :func:`_git`), or None if the blob is absent / git errors.
-    ``path`` is relative to ``repo_dir``."""
+    ``path`` is relative to ``repo_dir``. ``sha`` must be a commit id
+    (:func:`is_commit_id`); anything else returns None without running git."""
+    if not is_commit_id(sha):
+        return None
     try:
         result = subprocess.run(
             ["git", "-C", str(repo_dir), "show", f"{sha}:{path}"],

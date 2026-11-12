@@ -119,3 +119,18 @@ def test_file_at_commit_returns_old_content(repo_two_versions):
 
 def test_file_history_untracked_is_empty(repo_two_versions):
     assert file_history(repo_two_versions, "reports/nope.md") == []
+
+
+@pytest.mark.parametrize("sha,ok", [
+    ("abc1234", True), ("0" * 40, True), ("abc123", False), ("0" * 41, False),
+    ("ABC1234", False), ("HEAD", False), ("--output=x", False), (None, False),
+])
+def test_is_commit_id(sha, ok):
+    from eln.analysis.gitref import is_commit_id
+    assert is_commit_id(sha) is ok
+
+
+def test_file_at_commit_never_passes_an_option_to_git(tmp_path):
+    from eln.analysis.gitref import file_at_commit
+    assert file_at_commit(tmp_path, "--output=" + str(tmp_path / "x"), "f") is None
+    assert not (tmp_path / "x").exists()

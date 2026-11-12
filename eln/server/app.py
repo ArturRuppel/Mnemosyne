@@ -1254,7 +1254,9 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
         if version:
             # Historical, read-only view from git. For notebooks we hand back the
             # raw .ipynb text (the UI shows it read-only); markdown comes back as-is.
-            from eln.analysis.gitref import file_at_commit
+            from eln.analysis.gitref import file_at_commit, is_commit_id
+            if not is_commit_id(version):
+                return jsonify({"error": "Invalid version"}), 400
             rel = report_path.relative_to(root.resolve()).as_posix()
             content = file_at_commit(root, version, rel)
             if content is None:
