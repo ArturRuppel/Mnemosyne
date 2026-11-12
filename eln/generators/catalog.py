@@ -8,6 +8,7 @@ SDGL (see :func:`get_experiment_date_from_files`); it is never stored in the DB.
 """
 
 import argparse
+import html
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -64,6 +65,11 @@ def _format_date_cell(derived_date):
     if derived_date:
         return f'<span title="Start date, derived from earliest raw file">{derived_date}</span>'
     return '<span class="date-missing" title="No raw files found">-</span>'
+
+
+def _esc(value):
+    """HTML-escape a database value for text or a quoted attribute."""
+    return html.escape("" if value is None else str(value), quote=True)
 
 
 HTML_TEMPLATE = """<!DOCTYPE html>
@@ -581,7 +587,7 @@ def generate_catalog(root, catalog_out=None, plugins=None):
             for pid in protocol_ids:
                 if pid in protocol_map:
                     protocol_name = protocol_map[pid].split(' v')[0]  # Get name without version
-                    protocol_links.append(f'<a href="protocols.html#{pid}" class="protocol-link">{protocol_name}</a>')
+                    protocol_links.append(f'<a href="protocols.html#{_esc(pid)}" class="protocol-link">{_esc(protocol_name)}</a>')
             protocol_cell = ', '.join(protocol_links) if protocol_links else '-'
             # For data attribute, join protocol names without HTML
             protocol_names = ', '.join([protocol_map[pid].split(' v')[0] for pid in protocol_ids if pid in protocol_map])
@@ -593,7 +599,7 @@ def generate_catalog(root, catalog_out=None, plugins=None):
         tags_text = ', '.join(tags)
         tags_cell = (
             '<div class="tag-chips">'
-            + ''.join(f'<span class="tag-chip">{tag}</span>' for tag in tags)
+            + ''.join(f'<span class="tag-chip">{_esc(tag)}</span>' for tag in tags)
             + '</div>'
         ) if tags else '-'
 
@@ -602,7 +608,7 @@ def generate_catalog(root, catalog_out=None, plugins=None):
         cell_type_parts = [ct.strip() for ct in cell_types_text.split(',') if ct.strip()]
         cell_types_cell = (
             '<div class="tag-chips">'
-            + ''.join(f'<span class="tag-chip">{ct}</span>' for ct in cell_type_parts)
+            + ''.join(f'<span class="tag-chip">{_esc(ct)}</span>' for ct in cell_type_parts)
             + '</div>'
         ) if cell_type_parts else '-'
 
@@ -616,7 +622,7 @@ def generate_catalog(root, catalog_out=None, plugins=None):
         channels_text = ', '.join(channel_parts)
         channels_cell = (
             '<div class="tag-chips">'
-            + ''.join(f'<span class="tag-chip">{p}</span>' for p in channel_parts)
+            + ''.join(f'<span class="tag-chip">{_esc(p)}</span>' for p in channel_parts)
             + '</div>'
         ) if channel_parts else '-'
 
@@ -624,9 +630,10 @@ def generate_catalog(root, catalog_out=None, plugins=None):
         # so reference by filename (relative URL works locally and on Pages).
         thumbnail_path = exp.get('thumbnail_path') or ''
         thumbnail_file = Path(thumbnail_path).name if thumbnail_path else ''
+        thumbnail_src = _esc(thumbnail_file)
         thumbnail_cell = (
-            f'<a class="thumb-link" href="thumbnails/{thumbnail_file}" target="_blank">'
-            f'<img class="thumb-img" src="thumbnails/{thumbnail_file}" alt="thumbnail" loading="lazy"></a>'
+            f'<a class="thumb-link" href="thumbnails/{thumbnail_src}" target="_blank">'
+            f'<img class="thumb-img" src="thumbnails/{thumbnail_src}" alt="thumbnail" loading="lazy"></a>'
         ) if thumbnail_file else ''
 
         # CODE-NN identifier. data-id stays the integer PK (the edit deep-link
@@ -640,31 +647,33 @@ def generate_catalog(root, catalog_out=None, plugins=None):
             if code and repetition is not None else '-'
         )
 
+        # Every database value is escaped: a quote in a comment used to end its
+        # data- attribute, and markup in any field went into the page as markup.
         experiments_html.append(f"""
-            <tr data-id="{exp['id']}"
-                data-experiment_id="{experiment_code}"
-                data-experiment_type="{exp.get('experiment_type', '')}"
+            <tr data-id="{_esc(exp['id'])}"
+                data-experiment_id="{_esc(experiment_code)}"
+                data-experiment_type="{_esc(exp.get('experiment_type', ''))}"
                 data-explorer="{'yes' if explorers.get(experiment_code) else ''}"
-                data-date="{exp.get('derived_date') or ''}"
-                data-sample="{exp.get('live_or_fixed', '')}"
-                data-cell_types="{exp.get('cell_types', '')}"
-                data-microscope="{exp.get('microscope', '')}"
-                data-channels="{channels_text}"
-                data-protocol="{protocol_names}"
-                data-tags="{tags_text}"
-                data-comments="{exp.get('comments', '')}">
+                data-date="{_esc(exp.get('derived_date') or '')}"
+                data-sample="{_esc(exp.get('live_or_fixed', ''))}"
+                data-cell_types="{_esc(exp.get('cell_types', ''))}"
+                data-microscope="{_esc(exp.get('microscope', ''))}"
+                data-channels="{_esc(channels_text)}"
+                data-protocol="{_esc(protocol_names)}"
+                data-tags="{_esc(tags_text)}"
+                data-comments="{_esc(exp.get('comments', ''))}">
                 <td>{thumbnail_cell}</td>
-                <td><span class="exp-id">{experiment_code}</span></td>
-                <td>{exp.get('experiment_type', '-')}</td>
+                <td><span class="exp-id">{_esc(experiment_code)}</span></td>
+                <td>{_esc(exp.get('experiment_type') or '-')}</td>
                 <td>{explorer_cell(explorers.get(experiment_code))}</td>
                 <td>{_format_date_cell(exp.get('derived_date'))}</td>
-                <td>{exp.get('live_or_fixed', '-')}</td>
+                <td>{_esc(exp.get('live_or_fixed') or '-')}</td>
                 <td>{cell_types_cell}</td>
-                <td>{exp.get('microscope', '-')}</td>
+                <td>{_esc(exp.get('microscope') or '-')}</td>
                 <td>{channels_cell}</td>
                 <td>{protocol_cell}</td>
                 <td>{tags_cell}</td>
-                <td class="comments-cell"><div class="comments-inner">{exp.get('comments', '-')}</div></td>
+                <td class="comments-cell"><div class="comments-inner">{_esc(exp.get('comments') or '-')}</div></td>
             </tr>
         """)
 

@@ -14,6 +14,14 @@
     let codesByTitle = {};
     let titlesByCode = {};
 
+    // Values from the API (field values, tag names, file names) are data: escape
+    // them before they go into markup.
+    function esc(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+        });
+    }
+
     // ---- modal shell -------------------------------------------------------
     let dlg = null;
     function modal() {
@@ -76,7 +84,7 @@
                 if (!datalist) return;
                 const options = Array.isArray(values[entry[0]]) ? values[entry[0]] : [];
                 datalist.innerHTML = options.map(function (v) {
-                    return '<option value="' + v + '"></option>';
+                    return '<option value="' + esc(v) + '"></option>';
                 }).join('');
             });
         } catch (error) {
@@ -91,7 +99,7 @@
             const datalist = document.getElementById('tags-list');
             if (datalist && Array.isArray(tags)) {
                 datalist.innerHTML = tags.map(function (name) {
-                    return '<option value="' + name + '"></option>';
+                    return '<option value="' + esc(name) + '"></option>';
                 }).join('');
             }
         } catch (error) {
@@ -245,7 +253,7 @@
         document.querySelectorAll('#exp-channels .channel-target').forEach(function (el) { el.value = ''; });
         document.querySelectorAll('#exp-channels .channel-modality').forEach(function (el) { el.value = ''; });
         (channels || []).forEach(function (ch) {
-            const row = document.querySelector('#exp-channels .channel-row[data-label="' + ch.channel_label + '"]');
+            const row = document.querySelector('#exp-channels .channel-row[data-label="' + CSS.escape(String(ch.channel_label)) + '"]');
             if (!row) return;
             const targetEl = row.querySelector('.channel-target');
             const modalityEl = row.querySelector('.channel-modality');
@@ -677,7 +685,7 @@
             hint.textContent = 'Drop an .svg into the data repo\'s posters/ folder, then reopen this form.';
         } else {
             select.innerHTML = files.map(function (f) {
-                return '<option value="' + f + '">' + f + '</option>';
+                return '<option value="' + esc(f) + '">' + esc(f) + '</option>';
             }).join('');
         }
         wireCancel(body);

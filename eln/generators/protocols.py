@@ -6,6 +6,7 @@ the output ``catalog/`` directory.
 """
 
 import argparse
+import html
 import json
 import re
 import sqlite3
@@ -17,13 +18,25 @@ from eln.generators.nav import render_nav
 DEFAULT_DB_NAME = "experiments.db"
 
 
+def _esc(value):
+    """HTML-escape a database value for text or a quoted attribute."""
+    return html.escape("" if value is None else str(value), quote=True)
+
+
+def _script_json(value):
+    """JSON safe to inline in a <script>: no ``</script>``, ``<!--`` or line
+    separators can end the script early or change how it parses."""
+    return (json.dumps(value).replace("<", "\\u003c").replace(">", "\\u003e")
+            .replace("&", "\\u0026").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029"))
+
+
 def markdown_to_html(text):
     """Simple markdown to HTML converter."""
     if not text:
         return ""
 
-    # Escape HTML
-    text = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    # Escape HTML, quotes included: a link target lands in a quoted href
+    text = html.escape(text, quote=True)
 
     # Headers
     text = re.sub(r'^### (.+)$', r'<h3>\1</h3>', text, flags=re.MULTILINE)
@@ -284,24 +297,39 @@ PROTOCOLS_HTML_TEMPLATE = """<!DOCTYPE html>
             }}
         }}
 
-        function changeVersion(protocolName, selectElement) {{
+        // The protocol name and group id ride in data- attributes (never in an
+        // inline JS string), and every value is set as text, never as markup.
+        function changeVersion(selectElement) {{
             const versionId = selectElement.value;
-            const protocol = protocolVersions[protocolName].find(p => p.id == versionId);
+            const group = selectElement.dataset.group;
+            const versions = protocolVersions[selectElement.dataset.protocol] || [];
+            const protocol = versions.find(p => p.id == versionId);
 
             if (protocol) {{
-                const contentDiv = document.getElementById(`content-${{protocolName}}`);
-                const metaDiv = document.getElementById(`meta-${{protocolName}}`);
+                const contentDiv = document.getElementById(`content-${{group}}`);
+                const metaDiv = document.getElementById(`meta-${{group}}`);
 
-                contentDiv.innerHTML = protocol.content ?
-                    `<pre>${{protocol.content}}</pre>` :
-                    '<p style="color: var(--hm-faint);">No content available</p>';
-
-                let metaHtml = `<div><span class="label">Version:</span> ${{protocol.version}}</div>`;
-                metaHtml += `<div><span class="label">Created:</span> ${{protocol.created_at}}</div>`;
-                if (protocol.file_path) {{
-                    metaHtml += `<div><span class="label">File:</span> ${{protocol.file_path}}</div>`;
+                contentDiv.replaceChildren();
+                const body = document.createElement(protocol.content ? 'pre' : 'p');
+                if (protocol.content) {{
+                    body.textContent = protocol.content;
+                }} else {{
+                    body.style.color = 'var(--hm-faint)';
+                    body.textContent = 'No content available';
                 }}
-                metaDiv.innerHTML = metaHtml;
+                contentDiv.appendChild(body);
+
+                metaDiv.replaceChildren();
+                const rows = [['Version:', protocol.version], ['Created:', protocol.created_at]];
+                if (protocol.file_path) rows.push(['File:', protocol.file_path]);
+                rows.forEach(([label, value]) => {{
+                    const row = document.createElement('div');
+                    const span = document.createElement('span');
+                    span.className = 'label';
+                    span.textContent = label;
+                    row.append(span, ' ' + (value ?? ''));
+                    metaDiv.appendChild(row);
+                }});
             }}
         }}
 
@@ -398,12 +426,14 @@ def generate_protocol_catalog(root, catalog_out=None, plugins=None, only=None,
             version_options = []
             for v in versions:
                 selected = 'selected' if v['id'] == latest['id'] else ''
-                version_options.append(f'<option value="{v["id"]}" {selected}>v{v["version"]} ({v["created_at"]})</option>')
+                version_options.append(
+                    f'<option value="{_esc(v["id"])}" {selected}>v{_esc(v["version"])} ({_esc(v["created_at"])})</option>')
 
+            gid = _esc(latest['id'])
             version_select = f"""
                 <div class="version-selector">
                     <label>Version:</label>
-                    <select onchange="changeVersion('{name}', this)">
+                    <select data-protocol="{_esc(name)}" data-group="{gid}" onchange="changeVersion(this)">
                         {''.join(version_options)}
                     </select>
                 </div>
@@ -412,36 +442,38 @@ def generate_protocol_catalog(root, catalog_out=None, plugins=None, only=None,
             content_html = markdown_to_html(latest['content']) if latest.get('content') else '<p style="color: var(--hm-faint);">No content available</p>'
 
             header_cls = "protocol-header standalone" if standalone else "protocol-header"
-            header_onclick = "" if standalone else f" onclick=\"toggleProtocol('{latest['id']}')\""
+            # ids are integers from the database; escaped anyway, and the handler
+            # reads the id from the element rather than from an inline JS string
+            header_onclick = "" if standalone else ' onclick="toggleProtocol(this.parentElement.id)"'
             expand_icon = "" if standalone else (
-                f'<span class="expand-icon" id="icon-{latest["id"]}">▶</span>\n                            ')
+                f'<span class="expand-icon" id="icon-{gid}">▶</span>\n                            ')
             details_style = ' style="display: block;"' if standalone else ""
 
             protocols_html_list.append(f"""
-                <div class="protocol-group" id="{latest['id']}">
+                <div class="protocol-group" id="{gid}">
                     <div class="{header_cls}"{header_onclick}>
                         <div class="protocol-name">
-                            {expand_icon}{name}
+                            {expand_icon}{_esc(name)}
                         </div>
-                        <div class="latest-badge">LATEST: v{latest['version']}</div>
+                        <div class="latest-badge">LATEST: v{_esc(latest['version'])}</div>
                     </div>
-                    <div class="protocol-details" id="details-{latest['id']}"{details_style}>
-                        {f'<div class="protocol-description">{latest["description"]}</div>' if latest.get('description') else ''}
+                    <div class="protocol-details" id="details-{gid}"{details_style}>
+                        {f'<div class="protocol-description">{_esc(latest["description"])}</div>' if latest.get('description') else ''}
                         {version_select}
-                        <div class="protocol-content" id="content-{name}">
+                        <div class="protocol-content" id="content-{gid}">
                             {content_html}
                         </div>
-                        <div class="protocol-meta" id="meta-{name}">
-                            <div><span class="label">Version:</span> {latest['version']}</div>
-                            <div><span class="label">Created:</span> {latest['created_at']}</div>
-                            {f'<div><span class="label">File:</span> {latest["file_path"]}</div>' if latest.get('file_path') else ''}
+                        <div class="protocol-meta" id="meta-{gid}">
+                            <div><span class="label">Version:</span> {_esc(latest['version'])}</div>
+                            <div><span class="label">Created:</span> {_esc(latest['created_at'])}</div>
+                            {f'<div><span class="label">File:</span> {_esc(latest["file_path"])}</div>' if latest.get('file_path') else ''}
                         </div>
                     </div>
                 </div>
             """)
 
         protocols_html = '\n'.join(protocols_html_list)
-        protocols_json = json.dumps(protocol_groups)
+        protocols_json = _script_json(protocol_groups)
 
     # Generate final HTML
     html = PROTOCOLS_HTML_TEMPLATE.format(
