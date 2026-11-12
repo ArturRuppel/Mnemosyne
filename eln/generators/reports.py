@@ -8,6 +8,7 @@ repetitions (dates derived from raw-file mtimes), and the deduplicated protocols
 """
 
 import argparse
+import html
 import json
 import posixpath
 import re
@@ -789,7 +790,7 @@ def _chips(items):
         return '<span class="date-missing">-</span>'
     return (
         '<div class="tag-chips">'
-        + ''.join(f'<span class="tag-chip">{i}</span>' for i in items)
+        + ''.join(f'<span class="tag-chip">{_attr(i)}</span>' for i in items)
         + '</div>'
     )
 
@@ -810,7 +811,7 @@ def build_experiments_block(code, eln_conn, sdgl_conn, explorers=None):
     if not title_row:
         return (
             f'<div class="exp-overview-error">Unknown experiment series '
-            f'<code>{code}</code> — no matching code in the database.</div>'
+            f'<code>{_attr(code)}</code> — no matching code in the database.</div>'
         )
     series_title = title_row["title"]
 
@@ -863,11 +864,11 @@ def build_experiments_block(code, eln_conn, sdgl_conn, explorers=None):
 
         rows.append(f"""
                 <tr>
-                    <td><span class="exp-id">{experiment_code}</span></td>
+                    <td><span class="exp-id">{_attr(experiment_code)}</span></td>
                     <td>{explorer_cell((explorers or {}).get(experiment_code))}</td>
                     <td>{date_cell}</td>
                     <td>{_chips(cell_types)}</td>
-                    <td>{exp["microscope"] or '<span class="date-missing">-</span>'}</td>
+                    <td>{_attr(exp["microscope"]) if exp["microscope"] else '<span class="date-missing">-</span>'}</td>
                     <td>{_chips(channel_parts)}</td>
                     <td>{_chips(tags)}</td>
                 </tr>""")
@@ -889,7 +890,7 @@ def build_experiments_block(code, eln_conn, sdgl_conn, explorers=None):
 
     if protocols:
         links = ', '.join(
-            f'<a href="protocols.html#{pid}">{protocols[pid]}</a>'
+            f'<a href="protocols.html#{_attr(pid)}">{_attr(protocols[pid])}</a>'
             for pid in sorted(protocols)
         )
         protocols_html = f'<div class="exp-overview-protocols"><strong>Protocols used:</strong> {links}</div>'
@@ -898,8 +899,8 @@ def build_experiments_block(code, eln_conn, sdgl_conn, explorers=None):
 
     return f"""<div class="exp-overview">
             <div class="exp-overview-header">
-                <span class="exp-overview-code">{code}</span>
-                <span class="exp-overview-title">{series_title}</span>
+                <span class="exp-overview-code">{_attr(code)}</span>
+                <span class="exp-overview-title">{_attr(series_title)}</span>
             </div>{table}{protocols_html}
         </div>"""
 
@@ -1202,6 +1203,11 @@ def _cell_source(cell):
 def _escape(text):
     """HTML-escape text for safe display inside <pre>/<code>."""
     return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+
+def _attr(value):
+    """HTML-escape a value for text or a quoted attribute (quotes included)."""
+    return html.escape("" if value is None else str(value), quote=True)
 
 
 def _linkify_imports(escaped, code_index):
@@ -1630,12 +1636,12 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
                 '<a class="report-back" href="reports.html">&larr; All reports</a>')
             card = f"""
                 {back}
-                <div class="report-card" id="report-{slug}" data-report-src="{rel_src}">
+                <div class="report-card" id="report-{slug}" data-report-src="{_attr(rel_src)}">
                     <div class="report-header standalone">
                         <div class="report-title-row">
-                            {title}
+                            {_attr(title)}
                         </div>
-                        <div class="report-date">{report_date}</div>
+                        <div class="report-date">{_attr(report_date)}</div>
                     </div>
                     <div class="report-details" id="details-{slug}" style="display: block;">{toggle}
                         <div class="report-view" id="view-{slug}">
@@ -1661,16 +1667,16 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
                 thumb_html = f'<span class="tile-placeholder">{_escape(series_code or title[:1])}</span>'
             elif thumb.lower().endswith(_VIDEO_EXT):
                 # A movie previews as its opening frame (#t= makes mobile paint it).
-                thumb_html = f'<video src="{thumb}#t=0.1" muted playsinline preload="metadata"></video>'
+                thumb_html = f'<video src="{_attr(thumb)}#t=0.1" muted playsinline preload="metadata"></video>'
             else:
-                thumb_html = f'<img src="{thumb}" alt="" loading="lazy">'
+                thumb_html = f'<img src="{_attr(thumb)}" alt="" loading="lazy">'
             summary = extract_summary(content)
             summary_html = f'<p class="tile-summary">{_escape(summary)}</p>' if summary else ""
             href = report_page_name(slug)
             tiles.append((report_date[:10], f"""
-                <article class="report-tile" id="tile-{slug}" data-report-src="{rel_src}">
-                    <h2 class="tile-title"><a href="{href}">{title}</a></h2>
-                    <div class="tile-date">{report_date}</div>
+                <article class="report-tile" id="tile-{slug}" data-report-src="{_attr(rel_src)}">
+                    <h2 class="tile-title"><a href="{href}">{_attr(title)}</a></h2>
+                    <div class="tile-date">{_attr(report_date)}</div>
                     <a class="tile-thumb" href="{href}" tabindex="-1" aria-hidden="true">{thumb_html}</a>
                     {summary_html}
                 </article>"""))

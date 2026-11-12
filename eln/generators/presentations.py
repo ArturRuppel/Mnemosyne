@@ -6,6 +6,7 @@ treated as a presentation. No database is read.
 """
 
 import argparse
+from html import escape as _esc
 import re
 from pathlib import Path
 
@@ -86,9 +87,9 @@ def generate_presentations(root, catalog_out=None):
     rows = ""
     for p in presentations:
         rows += f"""
-            <tr data-pres-dir="{p['dirname']}">
-                <td>{p['date']}</td>
-                <td><a href="presentations/{p['dirname']}/index.html" class="presentation-link">{p['title']}</a></td>
+            <tr data-pres-dir="{_esc(p['dirname'], quote=True)}">
+                <td>{_esc(p['date'])}</td>
+                <td><a href="presentations/{_esc(p['dirname'], quote=True)}/index.html" class="presentation-link">{_esc(p['title'])}</a></td>
                 <td>{p['slide_count']}</td>
             </tr>"""
 

@@ -9,6 +9,7 @@ are a folder-scanned plugin, not a DB table.
 """
 
 import argparse
+from html import escape as _esc
 import json
 import re
 from pathlib import Path
@@ -105,13 +106,13 @@ def _document_card(doc_file, root, code_index=None):
 
     rel_src = doc_file.relative_to(root).as_posix()
     return f"""
-                <div class="report-card" id="report-{slug}" data-report-src="{rel_src}">
+                <div class="report-card" id="report-{slug}" data-report-src="{_esc(rel_src, quote=True)}">
                     <div class="report-header" onclick="toggleReport('{slug}')">
                         <div class="report-title-row">
                             <span class="expand-icon" id="icon-{slug}">&#9658;</span>
-                            {title}
+                            {_esc(title, quote=True)}
                         </div>
-                        <div class="report-date">{doc_date}</div>
+                        <div class="report-date">{_esc(doc_date, quote=True)}</div>
                     </div>
                     <div class="report-details" id="details-{slug}">{toggle}
                         <div class="report-view" id="view-{slug}">

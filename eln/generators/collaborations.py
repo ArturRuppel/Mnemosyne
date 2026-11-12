@@ -26,6 +26,7 @@ from eln.generators.reports import (
     REPORTS_HTML_TEMPLATE,
     THUMBNAIL_RE,
     _VIDEO_EXT,
+    _attr,
     _escape,
     _rewrite_relative_images,
     discover_report_files,
@@ -109,12 +110,12 @@ def _page_card(d):
         toggle = code_pane = ""
     return f"""
                 <a class="report-back" href="{PAGE_NAME}">&larr; All collaborations</a>
-                <div class="report-card" id="report-{slug}" data-report-src="{d["rel_src"]}">
+                <div class="report-card" id="report-{slug}" data-report-src="{_attr(d["rel_src"])}">
                     <div class="report-header standalone">
                         <div class="report-title-row">
-                            {d["title"]}
+                            {_attr(d["title"])}
                         </div>
-                        <div class="report-date">{d["date"]}</div>
+                        <div class="report-date">{_attr(d["date"])}</div>
                     </div>
                     <div class="report-details" id="details-{slug}" style="display: block;">{toggle}
                         <div class="report-view" id="view-{slug}">
@@ -133,9 +134,9 @@ def _tile(d):
     if not thumb:
         thumb_html = f'<span class="tile-placeholder">{_escape(d["title"][:1])}</span>'
     elif thumb.lower().endswith(_VIDEO_EXT):
-        thumb_html = f'<video src="{thumb}#t=0.1" muted playsinline preload="metadata"></video>'
+        thumb_html = f'<video src="{_attr(thumb)}#t=0.1" muted playsinline preload="metadata"></video>'
     else:
-        thumb_html = f'<img src="{thumb}" alt="" loading="lazy">'
+        thumb_html = f'<img src="{_attr(thumb)}" alt="" loading="lazy">'
     summary = extract_summary(_summary_source(d["content"]))
     summary_html = f'<p class="tile-summary">{_escape(summary)}</p>' if summary else ""
     href = collaboration_page_name(d["slug"])
@@ -143,9 +144,9 @@ def _tile(d):
     # The id is not "tile-<slug>": the shared template redirects those hashes to
     # report-<slug>.html, which is the wrong page for a collaboration.
     return f"""
-                <article class="report-tile" id="collab-{d["slug"]}" data-report-src="{d["rel_src"]}">
-                    <h2 class="tile-title"><a href="{href}">{d["title"]}</a></h2>
-                    <div class="tile-date">{d["date"]}</div>
+                <article class="report-tile" id="collab-{d["slug"]}" data-report-src="{_attr(d["rel_src"])}">
+                    <h2 class="tile-title"><a href="{href}">{_attr(d["title"])}</a></h2>
+                    <div class="tile-date">{_attr(d["date"])}</div>
                     <div class="tile-byline">with {byline}</div>
                     <a class="tile-thumb" href="{href}" tabindex="-1" aria-hidden="true">{thumb_html}</a>
                     {summary_html}

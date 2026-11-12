@@ -123,3 +123,36 @@ def test_markdown_escapes_quotes_so_a_link_cannot_grow_attributes():
 
 def test_markdown_escapes_markup():
     assert "<script>" not in markdown_to_html("<script>alert('x')</script>")
+
+
+def test_report_series_overview_escapes_database_values(root):
+    from eln.generators.reports import build_experiments_block
+    conn = sqlite3.connect(root / "experiments.db")
+    conn.row_factory = sqlite3.Row
+    block = build_experiments_block("SYNTH", conn, None)
+    conn.close()
+    assert "<script>alert" not in block and "<b>gel</b>" not in block
+    p = _Collect()
+    p.feed(block)
+    text = "".join(p.text)
+    assert HOSTILE in text and PROTOCOL in text
+
+
+def test_report_card_title_from_the_series_is_escaped(root):
+    from eln.generators import generate_reports
+    (root / "reports").mkdir()
+    (root / "reports" / "synth.md").write_text("# Synth\n\n**Series:** SYNTH\n\nBody.\n")
+    generate_reports(root, catalog_out=root / "catalog", plugins=[])
+    for page in (root / "catalog").glob("*.html"):
+        assert "<script>alert" not in body_of(page), page.name
+
+
+def test_presentation_dir_names_are_escaped(tmp_path):
+    from eln.generators import generate_presentations
+    deck = tmp_path / "presentations" / '2026-01-01_a"b<i>c'
+    deck.mkdir(parents=True)
+    (deck / "index.html").write_text("<html></html>")
+    out = generate_presentations(tmp_path, catalog_out=tmp_path / "catalog")
+    p = parse(out)
+    assert ("data-pres-dir", '2026-01-01_a"b<i>c') in p.attrs
+    assert "i" not in p.tags
