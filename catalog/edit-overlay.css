@@ -189,3 +189,5 @@ body.eln-editing { padding-bottom: 64px; }
     white-space: pre-wrap; background: var(--hm-n100); padding: 1rem;
     border-radius: 0; overflow: auto;
 }
+/* An older report version on show: a marine rule down the left says it isn't the live text. */
+.report-content.eln-version-old { border-left: 4px solid var(--hm-marine, #1f3f7a); padding-left: 1rem; }

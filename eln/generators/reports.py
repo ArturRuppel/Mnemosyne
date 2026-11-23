@@ -1479,6 +1479,53 @@ def discover_report_files(reports_dir, suffixes=(".md", ".ipynb")):
     )
 
 
+def render_report_body(content, report_dir, report_outputs, eln_conn, sdgl_conn,
+                       explorers=None):
+    """Render a report's markdown to the HTML of its card body.
+
+    Shared by the catalog build and the server's view of an older version, so
+    the two render alike. Relative image, link and embed paths are rebased onto
+    the data root (``figures/x.png`` in ``reports/X/`` → ``reports/X/figures/x.png``);
+    *report_outputs* maps notebook output tokens to their rendered HTML; the
+    ``{{experiments}}`` token becomes the DB-generated overview of the declared
+    series. Returns ``(content, html, series_code)`` where *content* is the
+    rewritten markdown (used for the title, date and first image).
+    """
+    content = THUMBNAIL_RE.sub("", content)
+    content = _rewrite_relative_images(content, report_dir)
+    content = _rewrite_relative_links(content, report_dir)
+    content = _rewrite_relative_embeds(content, report_dir)
+
+    html_content = markdown_to_html(content)
+    for token, rendered in report_outputs.items():
+        html_content = html_content.replace(f"<p>{token}</p>", rendered)
+        html_content = html_content.replace(token, rendered)
+
+    # The declared series ('**Series:** CODE') is the single coverage
+    # signal, shared by the card title and the {{experiments}} block.
+    series_code = parse_series(content)
+
+    # Inject the DB-generated experiment overview where the author placed
+    # the {{experiments}} token. The token survives markdown conversion as
+    # literal text, so we substitute here (post-escaping) to keep the
+    # generated HTML intact. No token → pass-through (e.g. Bluesky thread).
+    if PLACEHOLDER in html_content:
+        if series_code:
+            block = build_experiments_block(series_code, eln_conn, sdgl_conn, explorers)
+        else:
+            block = ('<div class="exp-overview-error">No <code>**Series:**</code> '
+                     'declared for this overview.</div>')
+        # The token sits on its own line, so the paragraph pass wraps it
+        # as <p>{{experiments}}</p>; strip that wrapper so the block isn't
+        # nested inside a <p>.
+        wrapped = f"<p>{PLACEHOLDER}</p>"
+        if wrapped in html_content:
+            html_content = html_content.replace(wrapped, block)
+        else:
+            html_content = html_content.replace(PLACEHOLDER, block)
+    return content, html_content, series_code
+
+
 def generate_reports(root, catalog_out=None, plugins=None, only=None,
                      output_name="reports.html"):
     """Generate the reports index and one page per report under *root*.
@@ -1553,42 +1600,11 @@ def generate_reports(root, catalog_out=None, plugins=None, only=None,
                 content = report_file.read_text()
                 report_outputs = {}
 
-            # Fix relative image paths to be relative to catalog directory
             report_dir = report_file.parent.relative_to(root)
             # ``**Thumbnail:** file`` only picks the index preview; it isn't prose.
             thumb_decl = THUMBNAIL_RE.search(content)
-            content = THUMBNAIL_RE.sub("", content)
-            content = _rewrite_relative_images(content, report_dir)
-            content = _rewrite_relative_links(content, report_dir)
-            content = _rewrite_relative_embeds(content, report_dir)
-
-            html_content = markdown_to_html(content)
-            for token, rendered in report_outputs.items():
-                html_content = html_content.replace(f"<p>{token}</p>", rendered)
-                html_content = html_content.replace(token, rendered)
-
-            # The declared series ('**Series:** CODE') is the single coverage
-            # signal, shared by the card title below and the {{experiments}} block.
-            series_code = parse_series(content)
-
-            # Inject the DB-generated experiment overview where the author placed
-            # the {{experiments}} token. The token survives markdown conversion as
-            # literal text, so we substitute here (post-escaping) to keep the
-            # generated HTML intact. No token → pass-through (e.g. Bluesky thread).
-            if PLACEHOLDER in html_content:
-                if series_code:
-                    block = build_experiments_block(series_code, eln_conn, sdgl_conn, explorers)
-                else:
-                    block = ('<div class="exp-overview-error">No <code>**Series:**</code> '
-                             'declared for this overview.</div>')
-                # The token sits on its own line, so the paragraph pass wraps it
-                # as <p>{{experiments}}</p>; strip that wrapper so the block isn't
-                # nested inside a <p>.
-                wrapped = f"<p>{PLACEHOLDER}</p>"
-                if wrapped in html_content:
-                    html_content = html_content.replace(wrapped, block)
-                else:
-                    html_content = html_content.replace(PLACEHOLDER, block)
+            content, html_content, series_code = render_report_body(
+                content, report_dir, report_outputs, eln_conn, sdgl_conn, explorers)
 
             # Card title: a series-linked report uses the canonical experiment
             # identity ("CODE — title" from experiment_codes) so the header matches

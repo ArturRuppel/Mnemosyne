@@ -489,6 +489,56 @@ def test_report_at_an_abbreviated_version(tmp_path):
     assert data["content"] == "# v1\n"
 
 
+def _report_repo_with_figure(tmp_path):
+    """A report whose figure changed between its two versions."""
+    root = _report_repo(tmp_path)
+    rp = root / "reports" / "r"
+    (rp / "r.md").write_text("# Old\n\n![plot](fig.png)\n\n**bold** $x^2$\n")
+    (rp / "fig.png").write_bytes(b"\x89PNG old")
+    _git(["add", "reports"], root)
+    _git(["commit", "-q", "-m", "with figure"], root)
+    (rp / "r.md").write_text("# New\n\n![plot](fig.png)\n")
+    (rp / "fig.png").write_bytes(b"\x89PNG new")
+    _git(["add", "reports"], root)
+    _git(["commit", "-q", "-m", "figure redone"], root)
+    return root
+
+
+def test_report_at_version_renders_html_with_its_own_figures(tmp_path):
+    client = create_app(_report_repo_with_figure(tmp_path), scan_roots=[]).test_client()
+    versions = client.get("/api/reports/r/r.md/versions").get_json()["versions"]
+    sha = versions[1]["sha"]                       # "with figure"
+    data = client.get(f"/api/reports/r/r.md?version={sha}&format=html").get_json()
+    assert "<strong>bold</strong>" in data["html"]
+    assert "$x^2$" in data["html"]                 # left for MathJax
+    src = f"/version/{sha}/reports/r/fig.png"
+    assert f'src="{src}"' in data["html"]
+    fig = client.get(src)
+    assert fig.status_code == 200
+    assert fig.mimetype == "image/png"
+    assert fig.data == b"\x89PNG old"              # the figure as it was then
+
+
+def test_report_at_version_without_format_has_no_html(tmp_path):
+    client = create_app(_report_repo_with_figure(tmp_path), scan_roots=[]).test_client()
+    sha = client.get("/api/reports/r/r.md/versions").get_json()["versions"][1]["sha"]
+    assert "html" not in client.get(f"/api/reports/r/r.md?version={sha}").get_json()
+
+
+@pytest.mark.parametrize("path", [
+    "reports/r/r.md", "experiments.db", "../x.png", "reports/../../x.png", "reports/r/nope.png",
+])
+def test_version_media_refuses_non_media_and_escapes(tmp_path, path):
+    client = create_app(_report_repo_with_figure(tmp_path), scan_roots=[]).test_client()
+    sha = client.get("/api/reports/r/r.md/versions").get_json()["versions"][0]["sha"]
+    assert client.get(f"/version/{sha}/{path}").status_code == 404
+
+
+def test_version_media_refuses_a_ref_name(tmp_path):
+    client = create_app(_report_repo_with_figure(tmp_path), scan_roots=[]).test_client()
+    assert client.get("/version/HEAD/reports/r/fig.png").status_code == 404
+
+
 def test_report_versions_empty_for_untracked(tmp_path):
     app = create_app(_report_repo(tmp_path), scan_roots=[])
     data = app.test_client().get("/api/reports/r/nope.md/versions").get_json()

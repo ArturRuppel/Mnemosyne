@@ -98,6 +98,23 @@ def file_history(repo_dir, path):
     return history
 
 
+def blob_at_commit(repo_dir, sha, path):
+    """Return the bytes of ``path`` as of commit ``sha``, or None if absent /
+    git errors / ``sha`` is not a commit id. Binary-safe, for figures."""
+    if not is_commit_id(sha):
+        return None
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_dir), "show", f"{sha}:{path}"],
+            capture_output=True,
+        )
+    except (OSError, ValueError):
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout
+
+
 def file_at_commit(repo_dir, sha, path):
     """Return the exact text content of ``path`` as of commit ``sha`` (no
     stripping, unlike :func:`_git`), or None if the blob is absent / git errors.

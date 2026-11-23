@@ -162,21 +162,36 @@
         return filename.split('/').map(encodeURIComponent).join('/');
     }
 
-    // Replace a report card's body with a historical version's content,
-    // read-only. The historical blob comes from git via the server, so this only
-    // works in the live server view; on the static export the fetch fails and the
-    // card is left untouched (graceful degradation).
+    // Replace a report card's body with a historical version, read-only. The
+    // server renders it like the live page, figures as they were at that commit;
+    // the raw text is the fallback if rendering failed. The historical blob comes
+    // from git via the server, so this only works in the live server view; on the
+    // static export the fetch fails and the card is left untouched.
+    // sha === null puts the current version back.
     function showReportVersion(card, filename, sha) {
-        fetch('/api/reports/' + encodeReportPath(filename) + '?version=' + encodeURIComponent(sha))
+        var content = card.querySelector('.report-content');
+        if (!content) return;
+        if (content.dataset.liveHtml === undefined) content.dataset.liveHtml = content.innerHTML;
+        if (sha === null) {
+            content.innerHTML = content.dataset.liveHtml;
+            content.classList.remove('eln-version-old');
+            return;
+        }
+        fetch('/api/reports/' + encodeReportPath(filename) + '?version=' +
+              encodeURIComponent(sha) + '&format=html')
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                var content = card.querySelector('.report-content');
-                if (!content) return;
-                var pre = document.createElement('pre');
-                pre.className = 'eln-version-pre';
-                pre.textContent = data.content || '';
-                content.innerHTML = '';
-                content.appendChild(pre);
+                if (data.html !== undefined) {
+                    content.innerHTML = data.html;
+                    if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([content]);
+                } else {
+                    var pre = document.createElement('pre');
+                    pre.className = 'eln-version-pre';
+                    pre.textContent = data.content || data.error || '';
+                    content.innerHTML = '';
+                    content.appendChild(pre);
+                }
+                content.classList.add('eln-version-old');
             })
             .catch(function() { /* server/git unavailable → leave card untouched */ });
     }
@@ -303,13 +318,17 @@
                 label.textContent = 'Version:';
                 var sel = document.createElement('select');
                 sel.className = 'eln-version-select';
+                var live = document.createElement('option');
+                live.value = '';
+                live.textContent = 'Current';
+                sel.appendChild(live);
                 versions.forEach(function(v, i) {
                     var opt = document.createElement('option');
                     opt.value = v.sha;
                     opt.textContent = 'v' + (versions.length - i) + ' · ' + v.date.slice(0, 10) + ' · ' + v.subject;
                     sel.appendChild(opt);
                 });
-                sel.addEventListener('change', function() { showReportVersion(card, filename, sel.value); });
+                sel.addEventListener('change', function() { showReportVersion(card, filename, sel.value || null); });
                 wrap.appendChild(label);
                 wrap.appendChild(sel);
                 details.insertBefore(wrap, details.firstChild);

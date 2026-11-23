@@ -15,6 +15,8 @@ The server is local-only and unauthenticated by design; ``auth.js`` (the GitLab
 Pages password gate) is served as a no-op so locally edited pages never prompt.
 """
 
+import json
+import posixpath
 import re
 import shutil
 import subprocess
@@ -1262,8 +1264,14 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
             if content is None:
                 return jsonify({"error": "Version not found"}), 404
             kind = "notebook" if report_path.suffix == ".ipynb" else "markdown"
-            return jsonify({"filename": filename, "type": kind,
-                            "version": version, "content": content})
+            payload = {"filename": filename, "type": kind,
+                       "version": version, "content": content}
+            if request.args.get("format") == "html":
+                try:
+                    payload["html"] = render_report_version(report_path, version, content)
+                except Exception as e:  # noqa: BLE001 - raw text is still sent
+                    payload["render_error"] = str(e)
+            return jsonify(payload)
 
         # A notebook returns its markdown cells (text only) for per-cell editing;
         # code cells and outputs are never sent and stay untouched on save.
@@ -1330,6 +1338,62 @@ def create_app(root, *, eln_db_path=None, sdgl_db_path=None, assets_dir=None,
             return jsonify({"success": True, "message": "Report deleted"})
         except OSError as e:
             return jsonify({"error": str(e)}), 500
+
+    # Figures an older report version shows: anything else stays out of reach.
+    VERSION_MEDIA = {
+        ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+        ".gif": "image/gif", ".svg": "image/svg+xml", ".webp": "image/webp",
+        ".mp4": "video/mp4", ".webm": "video/webm",
+    }
+    # img/source src values the catalog rendering made relative to the data root.
+    _VERSION_SRC_RE = re.compile(
+        r'(<(?:img|source)\b[^>]*?\ssrc=")(?!(?:[a-z][a-z0-9+.-]*:|/|#))([^"]+)"',
+        re.IGNORECASE)
+
+    def render_report_version(report_path, sha, content):
+        """Render a report's text at commit ``sha`` the way the catalog renders
+        the current one, with its figures pointed at their bytes at that commit
+        (served by :func:`report_version_media`)."""
+        from eln.generators.explorers import explorer_links
+        from eln.generators.reports import notebook_report_markdown, render_report_body
+        if report_path.suffix == ".ipynb":
+            content, outputs = notebook_report_markdown(json.loads(content))
+        else:
+            outputs = {}
+        report_dir = report_path.parent.relative_to(root.resolve())
+        eln_conn = get_db()
+        sdgl_conn = None
+        if sdgl_db_path.exists():
+            import sqlite3
+            sdgl_conn = sqlite3.connect(sdgl_db_path)
+            sdgl_conn.row_factory = sqlite3.Row
+        try:
+            _, html_content, _ = render_report_body(
+                content, report_dir, outputs, eln_conn, sdgl_conn, explorer_links(root))
+        finally:
+            eln_conn.close()
+            if sdgl_conn is not None:
+                sdgl_conn.close()
+        return _VERSION_SRC_RE.sub(
+            lambda m: f'{m.group(1)}/version/{sha}/{m.group(2)}"', html_content)
+
+    @app.route("/version/<sha>/<path:rel>", methods=["GET"])
+    def report_version_media(sha, rel):
+        """A figure as it was at commit ``sha``, for an older report version.
+        Only media types, only inside the data repo; a commit's blob never
+        changes, so the response may be cached for good."""
+        from eln.analysis.gitref import blob_at_commit, is_commit_id
+        rel = posixpath.normpath(rel)
+        mime = VERSION_MEDIA.get(posixpath.splitext(rel)[1].lower())
+        if (not is_commit_id(sha) or mime is None or rel.startswith(("../", "/"))
+                or rel == ".."):
+            return "Not found", 404
+        data = blob_at_commit(root, sha, rel)
+        if data is None:
+            return "Not found", 404
+        resp = Response(data, mimetype=mime)
+        resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return resp
 
     @app.route("/api/reports/<path:filename>/versions", methods=["GET"])
     def report_versions(filename):
